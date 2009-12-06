@@ -123,7 +123,17 @@ namespace DepCharter
 
         public void writeDepsInDotCode(StreamWriter writer)
         {
+            Console.WriteLine("Writing dependencies for " + this.name + " to dot file");
 
+            foreach (Project project in projects.Values)
+            {
+                writer.WriteLine(project.name + " [shape=box,style=filled,color=olivedrab1];");
+                foreach (Project depProject in project.dependencies)
+                {
+                    writer.WriteLine(project.name + " -> " + depProject.name);
+                }
+            }
+            
         }
 
         public int DepCount
@@ -164,6 +174,8 @@ namespace DepCharter
                 File.Delete(dotFileName);
             }
 
+            Console.WriteLine("Created " + dotFileName);
+
             StreamWriter dotFile = File.CreateText(dotFileName);
             dotFile.WriteLine("digraph G {");   //the first line for the .dot file
 
@@ -174,12 +186,19 @@ namespace DepCharter
             dotFile.Flush();
             dotFile.Close();
 
-            string cmdLine = " -Tpng " + dotFileName + " -o " + Settings.workdir + solution.name + "_dep.png";
+            string pngFile = Settings.workdir + solution.name + "_dep.png";
+            string cmdLine = " -Tpng " + dotFileName + " -o " + pngFile;
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = "dot.exe";
             proc.StartInfo.Arguments = cmdLine;
             proc.Start();
             proc.WaitForExit();
+
+            proc.StartInfo.FileName = pngFile;
+            proc.StartInfo.Arguments = "";
+            proc.Start();
+            proc.WaitForExit();
+
         }
 
         static void Main(string[] args)
@@ -192,7 +211,7 @@ namespace DepCharter
                     Settings.verbose = true;
                     continue;
                 }
-                Settings.input = arglower;
+                Settings.input = Path.GetFullPath(arglower);
             }
 
             if (Settings.input != null && File.Exists(Settings.input))
