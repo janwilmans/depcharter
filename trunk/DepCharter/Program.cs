@@ -2,6 +2,7 @@
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Windows.Forms;
 
 namespace DepCharter
 {
@@ -9,7 +10,7 @@ namespace DepCharter
 
     class Settings
     {
-        public static bool verbose;
+        public static bool reduce;
         public static string input;
         public static string workdir;
     }
@@ -157,10 +158,6 @@ namespace DepCharter
     {
         static void Execute()
         {
-            if (Settings.verbose)
-            {
-                Console.WriteLine("verbose mode enabled.");
-            }
             Settings.workdir = Path.GetDirectoryName(Settings.input) + "\\";
             Solution solution = new Solution(Settings.input);
             solution.resolveIds();
@@ -179,26 +176,68 @@ namespace DepCharter
             StreamWriter dotFile = File.CreateText(dotFileName);
             dotFile.WriteLine("digraph G {");   //the first line for the .dot file
 
+            // style
+            dotFile.WriteLine("graph [fontsize=24];");
+            dotFile.WriteLine("edge [fontsize=24];");
+            dotFile.WriteLine("node [fontsize=24];");
+            dotFile.WriteLine("ranksep = 2.5;");
+            dotFile.WriteLine("nodesep = 1.25;");
+            dotFile.WriteLine("edge [style=\"setlinewidth(3)\"];");
+
+            //dotFile.WriteLine("size=1024,700;");
+            //dotFile.WriteLine("ratio=expand;"); // expand/fill/compress/auto
+
             // write project-deps
             solution.writeDepsInDotCode(dotFile);
 
             dotFile.WriteLine("}");
-            dotFile.Flush();
             dotFile.Close();
 
             string pngFile = Settings.workdir + solution.name + "_dep.png";
-            string cmdLine = " -Tpng " + dotFileName + " -o " + pngFile;
+            if (File.Exists(pngFile)) File.Delete(pngFile);
+            string repngFile = Settings.workdir + solution.name + "_redep.png";
+            if (File.Exists(repngFile)) File.Delete(repngFile);
+
+            string redepFile = "redep.txt";
+            if (File.Exists(redepFile)) File.Delete(redepFile);
+            
+            if (Settings.reduce)
+            {
+                System.Diagnostics.Process tredProc = new System.Diagnostics.Process();
+                Console.WriteLine("Using tred to create reduced redep.txt");
+                tredProc.StartInfo.FileName = "tred.exe";
+                tredProc.StartInfo.Arguments = "dep.txt";
+                tredProc.StartInfo.UseShellExecute = false;
+                tredProc.StartInfo.RedirectStandardOutput = true;
+                tredProc.Start();
+                string tredOutput = tredProc.StandardOutput.ReadToEnd();
+                tredProc.WaitForExit();
+
+                StreamWriter writer = new StreamWriter(redepFile);
+                writer.Write(tredOutput);
+                writer.Close();
+
+                dotFileName = redepFile;
+                pngFile = repngFile;
+            }
+
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = "dot.exe";
-            proc.StartInfo.Arguments = cmdLine;
+            proc.StartInfo.Arguments = " -Tpng " + dotFileName + " -o " + pngFile; ;
             proc.Start();
             proc.WaitForExit();
 
-            proc.StartInfo.FileName = pngFile;
-            proc.StartInfo.Arguments = "";
-            proc.Start();
-            proc.WaitForExit();
-
+            if (File.Exists(pngFile))
+            {
+                proc.StartInfo.FileName = pngFile;
+                proc.StartInfo.Arguments = "";
+                proc.Start();
+                proc.WaitForExit();
+            }
+            else
+            {
+                MessageBox.Show("Error generation diagram");
+            }
         }
 
         static void Main(string[] args)
@@ -206,9 +245,9 @@ namespace DepCharter
             foreach (string arg in args)
             {
                 string arglower = arg.ToLower();
-                if (arglower.StartsWith("/v"))
+                if (arglower.StartsWith("/r"))
                 {
-                    Settings.verbose = true;
+                    Settings.reduce = true;
                     continue;
                 }
                 Settings.input = Path.GetFullPath(arglower);
@@ -220,7 +259,7 @@ namespace DepCharter
             }
             else
             {
-                Console.WriteLine("DepCharter [/v] <filename>\n");
+                Console.WriteLine("DepCharter [/r] <filename>\n");
             }
         }
     }
