@@ -16,18 +16,66 @@ namespace DepCharter
 
     class Project
     {
-        public Project(StringReader reader, string line)
+        public Project(Solution aSolution, StringReader reader, string firstLine)
         {
-            this.name = line.Substring(line.IndexOf(")")+1);
-            Console.WriteLine("project: " + this.name);
-        }
-       
+            solution = aSolution;
+            string part = firstLine.Substring(firstLine.IndexOf(")") + 1);
+            string startOfName = part.Substring(part.IndexOf("\"") + 1);
+            this.name = startOfName.Substring(0, startOfName.IndexOf("\""));
+            string startOfId = startOfName.Substring(startOfName.IndexOf("{"));
 
-        public ArrayList dependencies = new ArrayList();
-        public ArrayList users = new ArrayList();
+            // dependency-id's _must_ be treated case-insensitive
+            this.id = startOfId.ToLower().Substring(0, startOfId.IndexOf("}") +1);
+            
+            //Console.WriteLine("project: " + this.name + " " + this.id);
+
+            bool addDependencies = false;
+            while (true)
+            {
+                string line = reader.ReadLine();
+                if (line == null)
+                {
+                    Console.WriteLine("Unexpected end of solution file! (EndProject line not found)");
+                    break;
+                }
+                line = line.Trim();
+                if (line.StartsWith("ProjectSection(ProjectDependencies)"))
+                {
+                    addDependencies = true;
+                }
+
+                if (addDependencies)
+                {
+                    string depLine = line.ToLower();      // dependency-id's _must_ be treated case-insensitive
+                    if (depLine.StartsWith("{"))
+                    {
+                        string depId = depLine.Substring(0, depLine.IndexOf("}") +1);
+                        dependencyIds.Add(depId);
+                        //Console.WriteLine("dependency: " + depId);
+                    }
+                }
+                if (line.StartsWith("EndProject")) break;
+            }
+        }
+
+        public void resolveIds()
+        {
+            foreach (string id in dependencyIds)
+            {
+                //Console.WriteLine("resolve: " + id);
+                Project dependendProject = solution.projects[id];
+                dependencies.Add(dependendProject);
+                dependendProject.users.Add(this);
+            }
+        }
+
+        public ArrayList dependencyIds = new ArrayList();   // project id's (strings)
+        public ArrayList dependencies = new ArrayList();    // project objects
+        public ArrayList users = new ArrayList();           // project objects
 
         public string name;
         public string id;
+        Solution solution;
 
     }
 
@@ -36,13 +84,13 @@ namespace DepCharter
         public ProjectDictionary projects = new ProjectDictionary();
         void Add(Project project)
         {
-            if (projects.ContainsKey(project.name))
+            if (projects.ContainsKey(project.id))
             {
                 Console.WriteLine("error in solution, project '" + project.name + "' listed multiple times! (ignored)");
             }
             else
             {
-                projects.Add(project.name, project);
+                projects.Add(project.id, project);
             }
         }
 
@@ -59,10 +107,36 @@ namespace DepCharter
                 line = line.Trim().ToLower();
                 if (line.StartsWith("project"))
                 {
-                    Project project = new Project(reader, line);
+                    Project project = new Project(this, reader, line);
                     this.Add(project);
                 }
             }        
+        }
+
+        public void resolveIds()
+        {
+            foreach (Project project in projects.Values)
+            {
+                project.resolveIds();
+            }
+        }
+
+        public void writeDepsInDotCode(StreamWriter writer)
+        {
+
+        }
+
+        public int DepCount
+        {
+            get
+            {
+                int depCount = 0;
+                foreach (Project project in projects.Values)
+                {
+                    depCount += project.dependencies.Count;
+                }
+                return depCount;
+            }
         }
 
         public string name;
@@ -79,6 +153,10 @@ namespace DepCharter
             }
             Settings.workdir = Path.GetDirectoryName(Settings.input) + "\\";
             Solution solution = new Solution(Settings.input);
+            solution.resolveIds();
+
+            Console.WriteLine("Found " + solution.projects.Values.Count + " projects");
+            Console.WriteLine("Found " + solution.DepCount + " dependencies");
 
             string dotFileName = Settings.workdir + "dep.txt";
             if (File.Exists(dotFileName))
@@ -90,6 +168,7 @@ namespace DepCharter
             dotFile.WriteLine("digraph G {");   //the first line for the .dot file
 
             // write project-deps
+            solution.writeDepsInDotCode(dotFile);
 
             dotFile.WriteLine("}");
             dotFile.Flush();

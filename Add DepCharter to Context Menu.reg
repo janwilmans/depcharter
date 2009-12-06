@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\.sln]
+"Content Type"="text/plain"
+@="VisualStudio.Launcher.sln"
+
+[HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter\Command]
+@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" \"%1\""
