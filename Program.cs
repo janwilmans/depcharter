@@ -7,15 +7,29 @@ using System.Diagnostics;
 
 namespace DepCharter
 {
-  class ProjectDictionary : Dictionary<string, Project> { }
-
   class Settings
   {
     public static bool reduce;
     public static string input;
     public static string workdir;
+    public static bool verbose;
   }
 
+  class ProjectDictionary : Dictionary<string, Project> { }
+
+  class MyStringReader : StringReader
+  {
+    public MyStringReader(string input) : base(input) {}
+
+    static int linenumber = 1;
+    public override string ReadLine()
+    {
+      string line = base.ReadLine();
+      if (Settings.verbose) Console.WriteLine(linenumber + ": " + line);
+      linenumber++;
+      return line;
+    }
+  }
   class Project
   {
     public Project(Solution aSolution, StringReader reader, string firstLine)
@@ -28,8 +42,8 @@ namespace DepCharter
 
       // dependency-id's _must_ be treated case-insensitive
       this.id = startOfId.ToLower().Substring(0, startOfId.IndexOf("}") + 1);
-
-      //Console.WriteLine("project: " + this.name + " " + this.id);
+      
+      if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
 
       bool addDependencies = false;
       while (true)
@@ -53,10 +67,19 @@ namespace DepCharter
           {
             string depId = depLine.Substring(0, depLine.IndexOf("}") + 1);
             dependencyIds.Add(depId);
-            //Console.WriteLine("dependency: " + depId);
+            if (Settings.verbose) Console.WriteLine("dependency: " + depId);
+          }
+          if (line.StartsWith("EndProjectSection"))
+          {
+            if (Settings.verbose) Console.WriteLine("EndProjectSection found.\n");
+            break;
           }
         }
-        if (line.StartsWith("EndProject")) break;
+        if (line.ToLower().Trim() == "endproject")
+        {
+          if (Settings.verbose) Console.WriteLine("EndProject found.\n");
+          break;
+        }
       }
     }
 
@@ -100,14 +123,14 @@ namespace DepCharter
     {
       fullname = aFullname.Trim();
       name = Path.GetFileNameWithoutExtension(fullname);
-      StringReader reader = new StringReader(File.ReadAllText(fullname));
+      StringReader reader = new MyStringReader(File.ReadAllText(fullname));
 
       string line = "";
       while ((line = reader.ReadLine()) != null)
       {
         if (line == "") continue;
-        line = line.Trim().ToLower();
-        if (line.StartsWith("project"))
+        line = line.Trim();
+        if (line.StartsWith("Project"))
         {
           Project project = new Project(this, reader, line);
           this.Add(project);
@@ -272,6 +295,11 @@ namespace DepCharter
         if (arglower.StartsWith("/r"))
         {
           Settings.reduce = true;
+          continue;
+        }
+        if (arglower.StartsWith("/v"))
+        {
+          Settings.verbose = true;
           continue;
         }
         Settings.input = Path.GetFullPath(arglower);
