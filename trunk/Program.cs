@@ -10,9 +10,13 @@ namespace DepCharter
   class Settings
   {
     public static bool reduce;
+    public static bool ignore;
+    
     public static string input;
     public static string workdir;
+    public static string oneproject;
     public static bool verbose;
+    public static ArrayList ignoreEndsWithList = new ArrayList();
   }
 
   class ProjectDictionary : Dictionary<string, Project> { }
@@ -42,7 +46,7 @@ namespace DepCharter
 
       // dependency-id's _must_ be treated case-insensitive
       this.id = startOfId.ToLower().Substring(0, startOfId.IndexOf("}") + 1);
-      
+
       if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
 
       bool addDependencies = false;
@@ -83,6 +87,26 @@ namespace DepCharter
       }
     }
 
+    public void writeDepsInDotCodeRecursive(StreamWriter writer)
+    {
+      writeDepsInDotCode(writer);
+      foreach (Project depProject in this.dependencies)
+      {
+        depProject.writeDepsInDotCodeRecursive(writer);
+      }
+    }
+    
+    public void writeDepsInDotCode(StreamWriter writer)
+    {
+      if (this.ignore) return;
+      writer.WriteLine(this.name + " [shape=box,style=filled,color=olivedrab1];");
+      foreach (Project depProject in this.dependencies)
+      {
+        if (depProject.ignore) continue;
+        writer.WriteLine(this.name + " -> " + depProject.name);
+      }
+    }
+
     public void resolveIds()
     {
       foreach (string id in dependencyIds)
@@ -100,8 +124,8 @@ namespace DepCharter
 
     public string name;
     public string id;
+    public bool ignore;
     Solution solution;
-
   }
 
   class Solution
@@ -146,20 +170,54 @@ namespace DepCharter
       }
     }
 
+    public void markIgnoredProjects()
+    {
+      if (Settings.ignoreEndsWithList.Count > 0)
+      {
+        foreach (Project project in projects.Values)
+        {
+          foreach (string endString in Settings.ignoreEndsWithList)
+          {
+            if (project.name.ToLower().EndsWith(endString.ToLower()))
+            {
+              Console.WriteLine(project.name + " ignored.");
+              project.ignore = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     public void writeDepsInDotCode(StreamWriter writer)
     {
       Console.WriteLine("Writing dependencies for " + this.name + " to dot file");
-
       foreach (Project project in projects.Values)
       {
-        writer.WriteLine(project.name + " [shape=box,style=filled,color=olivedrab1];");
-        foreach (Project depProject in project.dependencies)
+        // use the non-recursive method
+        project.writeDepsInDotCode(writer);
+      }
+    }
+    
+    public void writeDepsInDotCodeForProject(StreamWriter writer, string projectName)
+    {
+      bool found = false;
+      foreach (Project project in projects.Values)
+      {
+        if (project.name.ToLower() == projectName.ToLower())
         {
-          writer.WriteLine(project.name + " -> " + depProject.name);
+          Console.WriteLine("Writing dependencies for project " + projectName + " to dot file");
+          project.writeDepsInDotCodeRecursive(writer);
+          found = true;
+          break;
         }
       }
-
+      if (!found)
+      {
+        Console.WriteLine("project " + projectName + " not found!");
+      }
     }
+    
 
     public int DepCount
     {
@@ -214,24 +272,36 @@ namespace DepCharter
       dotFile.WriteLine("digraph G {");   //the first line for the .dot file
 
       // style
-      //dotFile.WriteLine("graph [fontsize=32];");
-      //dotFile.WriteLine("edge [fontsize=32];");
       dotFile.WriteLine("node [fontsize=70]");
-
       dotFile.WriteLine("fontname=calibri");
       dotFile.WriteLine("aspect=0.7");
       dotFile.WriteLine("ranksep=1.5");
-      //dotFile.WriteLine("nodesep=0.5");
-      
-      //dotFile.WriteLine("arrowsize=16.0");
       dotFile.WriteLine("edge [style=\"setlinewidth(4)\"]");
 
+      //dotFile.WriteLine("graph [fontsize=32];");
+      //dotFile.WriteLine("edge [fontsize=32];");
+      //dotFile.WriteLine("nodesep=0.5");
+      //dotFile.WriteLine("arrowsize=16.0");
       //dotFile.WriteLine("size=1024,700;");
       //dotFile.WriteLine("ratio=expand;"); // expand/fill/compress/auto
 
-      // write project-deps
-      solution.writeDepsInDotCode(dotFile);
+      if (Settings.ignore)
+      {
+        //Settings.ignoreEndsWithList.Add("deploy");
+        //Settings.ignoreEndsWithList.Add("RCENU");
+        solution.markIgnoredProjects();
+      }
 
+      // write project-deps
+      if (Settings.oneproject != null)
+      {
+        solution.writeDepsInDotCodeForProject(dotFile, Settings.oneproject);
+      }
+      else
+      {
+        solution.writeDepsInDotCode(dotFile);
+      }
+      
       dotFile.WriteLine("}");
       dotFile.Close();
 
@@ -289,6 +359,9 @@ namespace DepCharter
 
     static void Main(string[] args)
     {
+      bool bNextIsIgnoreArgument = false;
+      bool bNextIsProjectArgument = false;
+
       foreach (string arg in args)
       {
         string arglower = arg.ToLower();
@@ -297,10 +370,32 @@ namespace DepCharter
           Settings.reduce = true;
           continue;
         }
+        if (arglower.StartsWith("/i"))
+        {
+          Settings.ignore = true;
+          bNextIsIgnoreArgument = true;
+          continue;
+        }
+        if (bNextIsIgnoreArgument)
+        {
+          Settings.ignoreEndsWithList.Add(arg.ToLower());
+          bNextIsIgnoreArgument = false;
+          continue;
+        }
+        if (arglower.StartsWith("/p"))
+        {
+          bNextIsProjectArgument = true;
+          continue;
+        }
+        if (bNextIsProjectArgument)
+        {
+          Settings.oneproject = arg.ToLower();
+          bNextIsProjectArgument = false;
+          continue;
+        }
         if (arglower.StartsWith("/v"))
         {
           Settings.verbose = true;
-          continue;
         }
         Settings.input = Path.GetFullPath(arglower);
       }
