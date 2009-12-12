@@ -4,10 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace DepCharter
 {
-  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument}
+  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument}
 
   class Settings
   {
@@ -18,7 +19,8 @@ namespace DepCharter
       optionList.Add(new Option("/p", Parser.project, Parser.projectArgument, "include project recursively (may be specified more then once)"));
       optionList.Add(new Option("/i", Parser.ignore, Parser.ignoreArgument, "ignore specific project (may be specified more then once)"));
       optionList.Add(new Option("/f", Parser.font, "use truetype font, better for readability but much slower)"));
-      optionList.Add(new Option("/fs", Parser.fontsize,  Parser.fontsizeArgument, "fontsize)"));
+      optionList.Add(new Option("/fs", Parser.fontsize, Parser.fontsizeArgument, "fontsize)"));
+      optionList.Add(new Option("/a", Parser.aspect, Parser.aspectArgument, "aspect ratio for the graph (set zero for none)"));
       optionList.Add(new Option("/v", Parser.verbose, "be verbose"));
     }
 
@@ -51,6 +53,12 @@ namespace DepCharter
           if (!Int32.TryParse(arg, out Settings.fontsize))
           {
             Settings.fontsize = 0;
+          }
+          break;
+        case Parser.aspectArgument:
+          if (!Double.TryParse(arg, out Settings.aspectratio))
+          {
+            Settings.aspectratio = 0.0;
           }
           break;
         default:
@@ -107,6 +115,7 @@ namespace DepCharter
     public static bool reduce;
     public static bool truetypefont;
     public static int fontsize;
+    public static double aspectratio = 0.7;     // fill the page by default
 
     public static Parser parserAction;
     public static Parser nextAction;
@@ -189,7 +198,13 @@ namespace DepCharter
       Console.WriteLine("Created " + dotFileName);
 
       dotFile.WriteLine("digraph G {");   // the first line for the .dot file
-      dotFile.WriteLine("aspect=0.7");    // fill the page
+
+      if (Settings.aspectratio > 0.01)
+      {
+        // prevent any regional settings from interfering with number formatting
+        String ratio = String.Format(CultureInfo.CreateSpecificCulture("en-us"), "aspect={0: #0.0}", Settings.aspectratio); 
+        dotFile.WriteLine(ratio);
+      }
 
       if (Settings.truetypefont)
       {
