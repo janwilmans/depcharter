@@ -7,18 +7,139 @@ using System.Diagnostics;
 
 namespace DepCharter
 {
+  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument}
+
   class Settings
   {
-    public static bool reduce;
-    public static bool ignore;
-    
+    static public void Initialize()
+    {
+      optionList.Add(new Option("/?", Parser.help, "display usage information"));
+      optionList.Add(new Option("/r", Parser.reduce, "reduce edges implied by transitivity"));
+      optionList.Add(new Option("/p", Parser.project, Parser.projectArgument, "include project recursively (may be specified more then once)"));
+      optionList.Add(new Option("/i", Parser.ignore, Parser.ignoreArgument, "ignore specific project (may be specified more then once)"));
+      optionList.Add(new Option("/f", Parser.font, "use truetype font, better for readability but much slower)"));
+      optionList.Add(new Option("/fs", Parser.fontsize,  Parser.fontsizeArgument, "fontsize)"));
+      optionList.Add(new Option("/v", Parser.verbose, "be verbose"));
+    }
+
+    public static void ProcessOption(Parser action, string arg)
+    {
+      // we are processing an option (can be either the option itself or its argument)
+      //Console.WriteLine(action + ", arg: " + arg);
+      bool optionDone = true;
+      switch (action)
+      {
+        case Parser.reduce:
+          Settings.reduce = true;
+          break;
+        case Parser.verbose:
+          Settings.verbose = true;
+          break;
+        case Parser.font:
+          Settings.truetypefont = true;
+          break;
+
+        case Parser.ignoreArgument:
+          Settings.ignoreEndsWithList.Add(arg.ToLower());
+          break;
+
+        case Parser.projectArgument:
+          Settings.projectsList.Add(arg.ToLower());
+          break;
+
+        case Parser.fontsizeArgument:
+          if (!Int32.TryParse(arg, out Settings.fontsize))
+          {
+            Settings.fontsize = 0;
+          }
+          break;
+        default:
+          // we are done process this option's arguments
+          // if no action is takes (default), we are not done yet.
+          optionDone = false;
+          break;
+      }
+
+      if (optionDone)
+      {
+        currentOption = null;
+      }
+      parserAction = nextAction;
+      nextAction = Parser.notmatched;
+    }
+
+
+    public static void ProcessCommandline(string arg)
+    {
+      nextAction = Parser.notmatched;
+      if (currentOption != null)
+      {
+        ProcessOption(parserAction, arg);
+        return;
+      }
+
+      foreach (Option option in optionList)
+      {
+        if (option.text.ToLower() == arg.ToLower().Trim())
+        {
+          //Console.WriteLine("Matched: " + option.argumentAction);
+          currentOption = option;
+          nextAction = option.argumentAction;
+          ProcessOption(option.optionAction, arg);
+          return;
+        }
+      }
+      if (currentOption == null && File.Exists(arg))    // the Parser was not matched, asume it was a filename
+      {
+        Settings.input = Path.GetFullPath(arg).ToLower();
+        Settings.workdir = Path.GetDirectoryName(Settings.input) + "\\";
+        Console.WriteLine("Settings.input: " + Settings.input);
+      }
+      else
+      {
+        Console.WriteLine("Ignoring unknown argument " + arg);
+        return;
+      }
+    }
     public static string input;
     public static string workdir;
-    public static string oneproject;
     public static bool verbose;
+    public static bool reduce;
+    public static bool truetypefont;
+    public static int fontsize;
+
+    public static Parser parserAction;
+    public static Parser nextAction;
+
     public static ArrayList ignoreEndsWithList = new ArrayList();
+    public static ArrayList projectsList = new ArrayList();
+    public static ArrayList optionList = new ArrayList();
+    public static Option currentOption;
+
   }
 
+  class Option
+  {
+    public string text;
+    public Parser optionAction;
+    public Parser argumentAction;
+    public string description;
+
+    public Option(string aText, Parser anOption, Parser anArgument, string aDescription)
+    {
+      text = aText;
+      optionAction = anOption;
+      argumentAction = anArgument;
+      description = aDescription;
+    }
+    public Option(string aText, Parser anOption, string aDescription)
+    {
+      text = aText;
+      optionAction = anOption;
+      argumentAction = Parser.notmatched;
+      description = aDescription;
+    }
+  }
   class ProjectDictionary : Dictionary<string, Project> { }
 
   class MyStringReader : StringReader
@@ -34,213 +155,11 @@ namespace DepCharter
       return line;
     }
   }
-  class Project
-  {
-    public Project(Solution aSolution, StringReader reader, string firstLine)
-    {
-      solution = aSolution;
-      string part = firstLine.Substring(firstLine.IndexOf(")") + 1);
-      string startOfName = part.Substring(part.IndexOf("\"") + 1);
-      this.name = startOfName.Substring(0, startOfName.IndexOf("\""));
-      string startOfId = startOfName.Substring(startOfName.IndexOf("{"));
-
-      // dependency-id's _must_ be treated case-insensitive
-      this.id = startOfId.ToLower().Substring(0, startOfId.IndexOf("}") + 1);
-
-      if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
-
-      bool addDependencies = false;
-      while (true)
-      {
-        string line = reader.ReadLine();
-        if (line == null)
-        {
-          Console.WriteLine("Unexpected end of solution file! (EndProject line not found)");
-          break;
-        }
-        line = line.Trim();
-        if (line.StartsWith("ProjectSection(ProjectDependencies)"))
-        {
-          addDependencies = true;
-        }
-
-        if (addDependencies)
-        {
-          string depLine = line.ToLower();      // dependency-id's _must_ be treated case-insensitive
-          if (depLine.StartsWith("{"))
-          {
-            string depId = depLine.Substring(0, depLine.IndexOf("}") + 1);
-            dependencyIds.Add(depId);
-            if (Settings.verbose) Console.WriteLine("dependency: " + depId);
-          }
-          if (line.StartsWith("EndProjectSection"))
-          {
-            if (Settings.verbose) Console.WriteLine("EndProjectSection found.\n");
-            break;
-          }
-        }
-        if (line.ToLower().Trim() == "endproject")
-        {
-          if (Settings.verbose) Console.WriteLine("EndProject found.\n");
-          break;
-        }
-      }
-    }
-
-    public void writeDepsInDotCodeRecursive(StreamWriter writer)
-    {
-      writeDepsInDotCode(writer);
-      foreach (Project depProject in this.dependencies)
-      {
-        depProject.writeDepsInDotCodeRecursive(writer);
-      }
-    }
-    
-    public void writeDepsInDotCode(StreamWriter writer)
-    {
-      if (this.ignore) return;
-      writer.WriteLine(this.name + " [shape=box,style=filled,color=olivedrab1];");
-      foreach (Project depProject in this.dependencies)
-      {
-        if (depProject.ignore) continue;
-        writer.WriteLine(this.name + " -> " + depProject.name);
-      }
-    }
-
-    public void resolveIds()
-    {
-      foreach (string id in dependencyIds)
-      {
-        //Console.WriteLine("resolve: " + id);
-        Project dependendProject = solution.projects[id];
-        dependencies.Add(dependendProject);
-        dependendProject.users.Add(this);
-      }
-    }
-
-    public ArrayList dependencyIds = new ArrayList();   // project id's (strings)
-    public ArrayList dependencies = new ArrayList();    // project objects
-    public ArrayList users = new ArrayList();           // project objects
-
-    public string name;
-    public string id;
-    public bool ignore;
-    Solution solution;
-  }
-
-  class Solution
-  {
-    public ProjectDictionary projects = new ProjectDictionary();
-    void Add(Project project)
-    {
-      if (projects.ContainsKey(project.id))
-      {
-        Console.WriteLine("error in solution, project '" + project.name + "' listed multiple times! (ignored)");
-      }
-      else
-      {
-        projects.Add(project.id, project);
-      }
-    }
-
-    public Solution(string aFullname)
-    {
-      fullname = aFullname.Trim();
-      name = Path.GetFileNameWithoutExtension(fullname);
-      StringReader reader = new MyStringReader(File.ReadAllText(fullname));
-
-      string line = "";
-      while ((line = reader.ReadLine()) != null)
-      {
-        if (line == "") continue;
-        line = line.Trim();
-        if (line.StartsWith("Project"))
-        {
-          Project project = new Project(this, reader, line);
-          this.Add(project);
-        }
-      }
-    }
-
-    public void resolveIds()
-    {
-      foreach (Project project in projects.Values)
-      {
-        project.resolveIds();
-      }
-    }
-
-    public void markIgnoredProjects()
-    {
-      if (Settings.ignoreEndsWithList.Count > 0)
-      {
-        foreach (Project project in projects.Values)
-        {
-          foreach (string endString in Settings.ignoreEndsWithList)
-          {
-            if (project.name.ToLower().EndsWith(endString.ToLower()))
-            {
-              Console.WriteLine(project.name + " ignored.");
-              project.ignore = true;
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    public void writeDepsInDotCode(StreamWriter writer)
-    {
-      Console.WriteLine("Writing dependencies for " + this.name + " to dot file");
-      foreach (Project project in projects.Values)
-      {
-        // use the non-recursive method
-        project.writeDepsInDotCode(writer);
-      }
-    }
-    
-    public void writeDepsInDotCodeForProject(StreamWriter writer, string projectName)
-    {
-      bool found = false;
-      foreach (Project project in projects.Values)
-      {
-        if (project.name.ToLower() == projectName.ToLower())
-        {
-          Console.WriteLine("Writing dependencies for project " + projectName + " to dot file");
-          project.writeDepsInDotCodeRecursive(writer);
-          found = true;
-          break;
-        }
-      }
-      if (!found)
-      {
-        Console.WriteLine("project " + projectName + " not found!");
-      }
-    }
-    
-
-    public int DepCount
-    {
-      get
-      {
-        int depCount = 0;
-        foreach (Project project in projects.Values)
-        {
-          depCount += project.dependencies.Count;
-        }
-        return depCount;
-      }
-    }
-
-    public string name;
-    public string fullname;
-  }
 
   class Program
   {
     static void Execute()
     {
-      Settings.workdir = Path.GetDirectoryName(Settings.input) + "\\";
       Solution solution = new Solution(Settings.input);
       solution.resolveIds();
 
@@ -266,18 +185,26 @@ namespace DepCharter
         File.Delete(dotFileName);
       }
 
+      StreamWriter dotFile = File.CreateText(dotFileName);
       Console.WriteLine("Created " + dotFileName);
 
-      StreamWriter dotFile = File.CreateText(dotFileName);
-      dotFile.WriteLine("digraph G {");   //the first line for the .dot file
+      dotFile.WriteLine("digraph G {");   // the first line for the .dot file
+      dotFile.WriteLine("aspect=0.7");    // fill the page
 
-      // style
-      dotFile.WriteLine("node [fontsize=70]");
-      dotFile.WriteLine("fontname=calibri");
-      dotFile.WriteLine("aspect=0.7");
-      dotFile.WriteLine("ranksep=1.5");
-      dotFile.WriteLine("edge [style=\"setlinewidth(4)\"]");
+      if (Settings.truetypefont)
+      {
+        Console.WriteLine("Using truetype font (calibri)");
+        dotFile.WriteLine("fontname=calibri");
+      }
 
+      if (Settings.fontsize > 0)
+      {
+        Console.WriteLine("Using node fontsize = " + Settings.fontsize);
+        dotFile.WriteLine("node [fontsize=" + Settings.fontsize + "]");
+      }
+             
+      //dotFile.WriteLine("ranksep=1.5");
+      //dotFile.WriteLine("edge [style=\"setlinewidth(4)\"]");
       //dotFile.WriteLine("graph [fontsize=32];");
       //dotFile.WriteLine("edge [fontsize=32];");
       //dotFile.WriteLine("nodesep=0.5");
@@ -285,22 +212,8 @@ namespace DepCharter
       //dotFile.WriteLine("size=1024,700;");
       //dotFile.WriteLine("ratio=expand;"); // expand/fill/compress/auto
 
-      if (Settings.ignore)
-      {
-        //Settings.ignoreEndsWithList.Add("deploy");
-        //Settings.ignoreEndsWithList.Add("RCENU");
-        solution.markIgnoredProjects();
-      }
-
-      // write project-deps
-      if (Settings.oneproject != null)
-      {
-        solution.writeDepsInDotCodeForProject(dotFile, Settings.oneproject);
-      }
-      else
-      {
-        solution.writeDepsInDotCode(dotFile);
-      }
+      solution.markIgnoredProjects();
+      solution.writeDepsInDotCode(dotFile);
       
       dotFile.WriteLine("}");
       dotFile.Close();
@@ -359,45 +272,10 @@ namespace DepCharter
 
     static void Main(string[] args)
     {
-      bool bNextIsIgnoreArgument = false;
-      bool bNextIsProjectArgument = false;
-
+      Settings.Initialize();
       foreach (string arg in args)
       {
-        string arglower = arg.ToLower();
-        if (arglower.StartsWith("/r"))
-        {
-          Settings.reduce = true;
-          continue;
-        }
-        if (arglower.StartsWith("/i"))
-        {
-          Settings.ignore = true;
-          bNextIsIgnoreArgument = true;
-          continue;
-        }
-        if (bNextIsIgnoreArgument)
-        {
-          Settings.ignoreEndsWithList.Add(arg.ToLower());
-          bNextIsIgnoreArgument = false;
-          continue;
-        }
-        if (arglower.StartsWith("/p"))
-        {
-          bNextIsProjectArgument = true;
-          continue;
-        }
-        if (bNextIsProjectArgument)
-        {
-          Settings.oneproject = arg.ToLower();
-          bNextIsProjectArgument = false;
-          continue;
-        }
-        if (arglower.StartsWith("/v"))
-        {
-          Settings.verbose = true;
-        }
-        Settings.input = Path.GetFullPath(arglower);
+        Settings.ProcessCommandline(arg);
       }
 
       if (Settings.input != null && File.Exists(Settings.input))
@@ -406,7 +284,16 @@ namespace DepCharter
       }
       else
       {
-        Console.WriteLine("DepCharter [/r] <filename>\n");
+        string optionString = "";
+        foreach (Option option in Settings.optionList)
+        {
+          optionString = optionString + "[" + option.text + "] ";
+        }
+        Console.WriteLine("DepCharter " + optionString+ "<filename.sln>\n");
+        foreach (Option option in Settings.optionList)
+        {
+          Console.WriteLine("  " + option.text + ": " + option.description);
+        }
       }
     }
   }
