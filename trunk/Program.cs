@@ -26,7 +26,14 @@ namespace DepCharter
       {
         ConfigForm aConfigForm = new ConfigForm();
         aConfigForm.cbReduce.Checked = Settings.reduce;
-  
+        aConfigForm.cbTrueType.Checked = Settings.truetypefont;
+
+        if (Settings.fontsize > 0)
+        {
+          aConfigForm.cbFontsize.Checked = true;
+          aConfigForm.tbFontsize.Text = Settings.fontsize.ToString();
+        }
+        
         foreach (Project project in solution.projects.Values)
         {
             int index = aConfigForm.projectsBox.Items.Add(project.name);
@@ -35,8 +42,40 @@ namespace DepCharter
               aConfigForm.projectsBox.SetSelected(index, true);
             }
         }
-        aConfigForm.ShowDialog();
+        DialogResult result = aConfigForm.ShowDialog();
+        if (result != DialogResult.OK)
+        {
+          // no nothing if the config-window is close with the top-right 'x' button
+          return;
+        }
         Settings.reduce = aConfigForm.cbReduce.Checked;
+        Settings.truetypefont = aConfigForm.cbTrueType.Checked;
+
+        Settings.fontsize = 0;
+        if (aConfigForm.cbFontsize.Checked)
+        {
+          Int32.TryParse(aConfigForm.tbFontsize.Text, out Settings.fontsize);
+        }
+
+        Settings.aspectratio = 0.7;
+        if (aConfigForm.cbAspect.Checked)
+        {
+          Double.TryParse(aConfigForm.tbAspect.Text, out Settings.aspectratio);
+        }
+
+        Settings.projectsList.Clear();
+        Settings.ignoreEndsWithList.Clear();
+       
+        foreach (Project project in solution.projects.Values)
+        {
+            project.ignore = true;
+        }
+
+        foreach (string selectedProject in aConfigForm.projectsBox.SelectedItems)
+        {
+          solution.projectsByName[selectedProject].ignore = false;
+        }
+        
       }
 
       if (deps > 100)
