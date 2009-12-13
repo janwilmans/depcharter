@@ -53,13 +53,15 @@
           // 
           // btGenerate
           // 
-          this.btGenerate.Location = new System.Drawing.Point(302, 178);
+          this.btGenerate.DialogResult = System.Windows.Forms.DialogResult.OK;
+          this.btGenerate.Image = global::depcharter.Properties.Resources.chart_organisation;
+          this.btGenerate.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+          this.btGenerate.Location = new System.Drawing.Point(240, 160);
           this.btGenerate.Name = "btGenerate";
-          this.btGenerate.Size = new System.Drawing.Size(98, 23);
+          this.btGenerate.Size = new System.Drawing.Size(160, 38);
           this.btGenerate.TabIndex = 6;
-          this.btGenerate.Text = "Generate Graph";
+          this.btGenerate.Text = "Generate graph";
           this.btGenerate.UseVisualStyleBackColor = true;
-          this.btGenerate.Click += new System.EventHandler(this.button3_Click);
           // 
           // cbReduce
           // 

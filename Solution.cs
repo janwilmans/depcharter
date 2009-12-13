@@ -121,6 +121,8 @@ namespace DepCharter
   class Solution
   {
     public ProjectDictionary projects = new ProjectDictionary();
+    public ProjectDictionary projectsByName = new ProjectDictionary();
+
     void Add(Project project)
     {
       if (projects.ContainsKey(project.id))
@@ -130,6 +132,7 @@ namespace DepCharter
       else
       {
         projects.Add(project.id, project);
+        projectsByName.Add(project.name, project);
       }
     }
 
@@ -166,6 +169,7 @@ namespace DepCharter
       {
         foreach (Project project in projects.Values)
         {
+          project.ignore = false;
           foreach (string endString in Settings.ignoreEndsWithList)
           {
             if (project.name.ToLower().EndsWith(endString.ToLower()))
