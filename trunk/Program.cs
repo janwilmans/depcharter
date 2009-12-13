@@ -5,176 +5,39 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 namespace DepCharter
 {
-  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument}
-
-  class Settings
-  {
-    static public void Initialize()
-    {
-      optionList.Add(new Option("/?", Parser.help, "display usage information"));
-      optionList.Add(new Option("/r", Parser.reduce, "reduce edges implied by transitivity"));
-      optionList.Add(new Option("/p", Parser.project, Parser.projectArgument, "include project recursively (may be specified more then once)"));
-      optionList.Add(new Option("/i", Parser.ignore, Parser.ignoreArgument, "ignore specific project (may be specified more then once)"));
-      optionList.Add(new Option("/f", Parser.font, "use truetype font, better for readability but much slower)"));
-      optionList.Add(new Option("/fs", Parser.fontsize, Parser.fontsizeArgument, "fontsize)"));
-      optionList.Add(new Option("/a", Parser.aspect, Parser.aspectArgument, "aspect ratio for the graph (set zero for none)"));
-      optionList.Add(new Option("/v", Parser.verbose, "be verbose"));
-    }
-
-    public static void ProcessOption(Parser action, string arg)
-    {
-      // we are processing an option (can be either the option itself or its argument)
-      //Console.WriteLine(action + ", arg: " + arg);
-      bool optionDone = true;
-      switch (action)
-      {
-        case Parser.reduce:
-          Settings.reduce = true;
-          break;
-        case Parser.verbose:
-          Settings.verbose = true;
-          break;
-        case Parser.font:
-          Settings.truetypefont = true;
-          break;
-
-        case Parser.ignoreArgument:
-          Settings.ignoreEndsWithList.Add(arg.ToLower());
-          break;
-
-        case Parser.projectArgument:
-          Settings.projectsList.Add(arg.ToLower());
-          break;
-
-        case Parser.fontsizeArgument:
-          if (!Int32.TryParse(arg, out Settings.fontsize))
-          {
-            Settings.fontsize = 0;
-          }
-          break;
-        case Parser.aspectArgument:
-          if (!Double.TryParse(arg, out Settings.aspectratio))
-          {
-            Settings.aspectratio = 0.0;
-          }
-          break;
-        default:
-          // we are done process this option's arguments
-          // if no action is takes (default), we are not done yet.
-          optionDone = false;
-          break;
-      }
-
-      if (optionDone)
-      {
-        currentOption = null;
-      }
-      parserAction = nextAction;
-      nextAction = Parser.notmatched;
-    }
-
-
-    public static void ProcessCommandline(string arg)
-    {
-      nextAction = Parser.notmatched;
-      if (currentOption != null)
-      {
-        ProcessOption(parserAction, arg);
-        return;
-      }
-
-      foreach (Option option in optionList)
-      {
-        if (option.text.ToLower() == arg.ToLower().Trim())
-        {
-          //Console.WriteLine("Matched: " + option.argumentAction);
-          currentOption = option;
-          nextAction = option.argumentAction;
-          ProcessOption(option.optionAction, arg);
-          return;
-        }
-      }
-      if (currentOption == null && File.Exists(arg))    // the Parser was not matched, asume it was a filename
-      {
-        Settings.input = Path.GetFullPath(arg).ToLower();
-        Settings.workdir = Path.GetDirectoryName(Settings.input) + "\\";
-        Console.WriteLine("Settings.input: " + Settings.input);
-      }
-      else
-      {
-        Console.WriteLine("Ignoring unknown argument " + arg);
-        return;
-      }
-    }
-    public static string input;
-    public static string workdir;
-    public static bool verbose;
-    public static bool reduce;
-    public static bool truetypefont;
-    public static int fontsize;
-    public static double aspectratio = 0.7;     // fill the page by default
-
-    public static Parser parserAction;
-    public static Parser nextAction;
-
-    public static ArrayList ignoreEndsWithList = new ArrayList();
-    public static ArrayList projectsList = new ArrayList();
-    public static ArrayList optionList = new ArrayList();
-    public static Option currentOption;
-
-  }
-
-  class Option
-  {
-    public string text;
-    public Parser optionAction;
-    public Parser argumentAction;
-    public string description;
-
-    public Option(string aText, Parser anOption, Parser anArgument, string aDescription)
-    {
-      text = aText;
-      optionAction = anOption;
-      argumentAction = anArgument;
-      description = aDescription;
-    }
-    public Option(string aText, Parser anOption, string aDescription)
-    {
-      text = aText;
-      optionAction = anOption;
-      argumentAction = Parser.notmatched;
-      description = aDescription;
-    }
-  }
-  class ProjectDictionary : Dictionary<string, Project> { }
-
-  class MyStringReader : StringReader
-  {
-    public MyStringReader(string input) : base(input) {}
-
-    static int linenumber = 1;
-    public override string ReadLine()
-    {
-      string line = base.ReadLine();
-      if (Settings.verbose) Console.WriteLine(linenumber + ": " + line);
-      linenumber++;
-      return line;
-    }
-  }
-
   class Program
   {
     static void Execute()
     {
+
       Solution solution = new Solution(Settings.input);
       solution.resolveIds();
+      solution.markIgnoredProjects();
 
       Console.WriteLine("Found " + solution.projects.Values.Count + " projects");
       int deps = solution.DepCount;
       Console.WriteLine("Found " + deps + " dependencies");
+
+      if (Settings.configwindow)
+      {
+        ConfigForm aConfigForm = new ConfigForm();
+        aConfigForm.cbReduce.Checked = Settings.reduce;
+  
+        foreach (Project project in solution.projects.Values)
+        {
+            int index = aConfigForm.projectsBox.Items.Add(project.name);
+            if (!project.ignore)
+            {
+              aConfigForm.projectsBox.SetSelected(index, true);
+            }
+        }
+        aConfigForm.ShowDialog();
+        Settings.reduce = aConfigForm.cbReduce.Checked;
+      }
 
       if (deps > 100)
       {
@@ -227,7 +90,6 @@ namespace DepCharter
       //dotFile.WriteLine("size=1024,700;");
       //dotFile.WriteLine("ratio=expand;"); // expand/fill/compress/auto
 
-      solution.markIgnoredProjects();
       solution.writeDepsInDotCode(dotFile);
       
       dotFile.WriteLine("}");
@@ -285,12 +147,21 @@ namespace DepCharter
       }
     }
 
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
     static void Main(string[] args)
     {
       Settings.Initialize();
       foreach (string arg in args)
       {
         Settings.ProcessCommandline(arg);
+      }
+
+      if (Settings.hide)
+      {
+        IntPtr hWnd = Process.GetCurrentProcess().MainWindowHandle;
+        ShowWindow(hWnd, 0);
       }
 
       if (Settings.input != null && File.Exists(Settings.input))
@@ -304,10 +175,12 @@ namespace DepCharter
         {
           optionString = optionString + "[" + option.text + "] ";
         }
+
+        // display usage help
         Console.WriteLine("DepCharter " + optionString+ "<filename.sln>\n");
         foreach (Option option in Settings.optionList)
         {
-          Console.WriteLine("  " + option.text + ": " + option.description);
+          Console.WriteLine(option.description);
         }
       }
     }
