@@ -8,6 +8,22 @@ using System.Diagnostics;
 namespace DepCharter
 {
 
+  class ProjectDictionary : Dictionary<string, Project> { }
+
+  class MyStringReader : StringReader
+  {
+    public MyStringReader(string input) : base(input) { }
+
+    static int linenumber = 1;
+    public override string ReadLine()
+    {
+      string line = base.ReadLine();
+      if (Settings.verbose) Console.WriteLine(linenumber + ": " + line);
+      linenumber++;
+      return line;
+    }
+  }
+
   class Project
   {
     public Project(Solution aSolution, StringReader reader, string firstLine)
