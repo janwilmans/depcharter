@@ -4,5 +4,11 @@ Windows Registry Editor Version 5.00
 
 [-HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter\Command]
 
+[-HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter Reduce]
+
 [-HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter Reduce\Command]
+
+[-HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter config]
+
+[-HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter config\Command]
 

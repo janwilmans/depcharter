@@ -1,4 +1,7 @@
-﻿namespace DepCharter
+﻿using System;
+using System.Drawing;
+
+namespace DepCharter
 {
     partial class ConfigForm
     {
@@ -54,9 +57,8 @@
           // btGenerate
           // 
           this.btGenerate.DialogResult = System.Windows.Forms.DialogResult.OK;
-          this.btGenerate.Image = global::depcharter.Properties.Resources.chart_organisation;
           this.btGenerate.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-          this.btGenerate.Location = new System.Drawing.Point(240, 160);
+          this.btGenerate.Location = new System.Drawing.Point(318, 160);
           this.btGenerate.Name = "btGenerate";
           this.btGenerate.Size = new System.Drawing.Size(160, 38);
           this.btGenerate.TabIndex = 6;
@@ -128,7 +130,7 @@
           this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
           this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
           this.BackColor = System.Drawing.Color.Lavender;
-          this.ClientSize = new System.Drawing.Size(412, 213);
+          this.ClientSize = new System.Drawing.Size(509, 213);
           this.Controls.Add(this.tbAspect);
           this.Controls.Add(this.cbAspect);
           this.Controls.Add(this.tbFontsize);
