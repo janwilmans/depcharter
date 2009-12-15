@@ -1,0 +1,9 @@
+Note: these steps should be executed manually:
+
+- press 'install' to extract to c:\program files\depcharter (path hardcoded in .reg files to add context menus)
+
+- run "Add DepCharter to Context Menu.reg" and confirm the additions should be added to the registry
+
+- install Graphviz (tested with graphviz-2.24.msi)
+
+- now you can right-click any .sln file to generate graphs
