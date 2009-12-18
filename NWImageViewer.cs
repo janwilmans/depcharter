@@ -10,28 +10,20 @@ using System.IO;
 
 namespace depcharter
 {
-  public partial class NWImageViewerBase : System.Windows.Forms.PictureBox
-  {
-
-  }
-
-  public partial class NWImageViewerBase2 : System.Windows.Forms.UserControl
+  public partial class NWImageViewerBase : System.Windows.Forms.UserControl
   {
     public Image Image { get; set; }
     public TextureBrush Brush { get; set; }
   }
 
-  public partial class NWImageViewer : NWImageViewerBase2
+  public partial class NWImageViewer : NWImageViewerBase
   {
     public NWImageViewer()
     {
       zoom = 1.0F;
-//      InitializeComponent();
-
       base.SetStyle(ControlStyles.DoubleBuffer, true);
       base.SetStyle(ControlStyles.UserPaint, true);
       base.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-      this.Dock = DockStyle.Fill;
       base.ResumeLayout(false);
 
       FileStream fs = new FileStream("large.png", FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -63,22 +55,20 @@ namespace depcharter
     public void MouseDown_event(object sender, MouseEventArgs e)
     {
       mouseDownLocation = screenPoint(e.X, e.Y);
-      Console.WriteLine("down x/y: " + mouseDownLocation.X + ", " + mouseDownLocation.Y);
+      //Console.WriteLine("drag on, down x/y: " + mouseDownLocation.X + ", " + mouseDownLocation.Y);
       dragging = true;
-      Console.WriteLine("drag on");
-
     }
 
     public void MouseUp_event(object sender, MouseEventArgs e)
     {
       dragging = false;
       lastTranslation = activeTranslation;
-      Console.WriteLine("drag off");
+      //Console.WriteLine("drag off");
     }
 
     public void MouseLeave_event(object sender, EventArgs e)
     {
-
+      // ignore this event
     }
 
     public void MouseMove_event(object sender, MouseEventArgs e)
@@ -88,14 +78,36 @@ namespace depcharter
         currentLocation = screenPoint(e.X, e.Y);
         activeTranslation.X = lastTranslation.X + mouseDownLocation.X - currentLocation.X;
         activeTranslation.Y = lastTranslation.Y + mouseDownLocation.Y - currentLocation.Y;
-        //Console.WriteLine("down x/y: " + activeTranslation.X + ", " + activeTranslation.Y);
+
+        applyLimits(ref activeTranslation);
+    
+        Console.WriteLine("down x/y: " + activeTranslation.X + ", " + activeTranslation.Y);
         this.Invalidate();
       }
+    }
+
+    void applyLimits(ref Point translation)
+    {
+      if (translation.X < 0) translation.X = 0;
+      if (translation.Y < 0) translation.Y = 0;
+
+      Console.WriteLine("zoom: " + zoom);
+
+      int virtWidth = (int)(Image.Width * zoom);
+      int virtHeight = (int)(Image.Height * zoom);
+
+      int maxX = virtWidth - this.Width;
+      int maxY = virtHeight - this.Height;
+      Console.WriteLine("max x/y: " + maxX + ", " + maxY);
+
+      if (translation.X > maxX) translation.X = maxX;
+      if (translation.Y > maxY) translation.Y = maxY;
     }
 
     protected override void OnSizeChanged(EventArgs e)
     {
       base.OnSizeChanged(e);
+      applyLimits(ref activeTranslation);
       this.Invalidate();
     }
 
@@ -114,32 +126,66 @@ namespace depcharter
         zoom += step;
       }
 
-      if (zoom < 0.12) zoom = 0.1F;
-      if (zoom > 10.0) zoom = 10.0F;   //todo: max full image
+      if (zoom < 0.07) zoom = 0.05F;
+      if (zoom > 2.0) zoom = 2.0F;
+
+      applyLimits(ref activeTranslation);
       this.Invalidate();
-      Console.WriteLine("wheel delta: {0}, zoom: {1}", delta, zoom);
+      //Console.WriteLine("wheel delta: {0}, zoom: {1}", delta, zoom);
     }
 
+    /*
     protected override void OnPaint(PaintEventArgs paintEventArgs)
     {
-      //this.Location = activeTranslation;
-      //base.OnPaint(paintEventArgs);
-      
+      this.Location = activeTranslation;
+      base.OnPaint(paintEventArgs);
+    }
+    */
+
+    /*
+    // very smooth, but brushsize is limited?
+    protected override void OnPaint(PaintEventArgs paintEventArgs)
+    {
       Matrix mx = new Matrix(); // create an identity matrix
+      mx.Translate(activeTranslation.X, activeTranslation.Y, MatrixOrder.Append);
       mx.Scale(zoom, zoom); // zoom image
-      //mx.Translate(viewRectWidth / 2.0f, viewRectHeight / 2.0f, MatrixOrder.Append); // move image to view window center
 
       Graphics graphics = paintEventArgs.Graphics;
-      //graphics.InterpolationMode = InterpolationMode.Low;
-      //graphics.SmoothingMode = SmoothingMode.AntiAlias;
       graphics.Transform = mx;
-
-      Rectangle srcRect = new Rectangle(activeTranslation.X, activeTranslation.Y, (int)(zoom*this.Width), (int)(zoom*this.Height));
       Rectangle destRect = new Rectangle(0, 0, this.Width, this.Height);
-
-      //graphics.DrawImage(Image, destRect, srcRect, GraphicsUnit.Pixel);
       graphics.FillRectangle(Brush, destRect);
     }
+    */
+
+    Rectangle calculateSourceRect()
+    {
+      Rectangle srcRect = new Rectangle(activeTranslation.X, activeTranslation.Y, (int)(this.Width / zoom), (int)(this.Height / zoom));
+      return srcRect;
+    }
+   
+    // works well, but not very fast
+    protected override void OnPaint(PaintEventArgs paintEventArgs)
+    {   
+      Graphics graphics = paintEventArgs.Graphics;
+      graphics.InterpolationMode = InterpolationMode.Low;
+      Rectangle destRect = new Rectangle(0, 0, this.Width, this.Height);
+      graphics.DrawImage(Image, destRect, calculateSourceRect(), GraphicsUnit.Pixel);
+    }
+   
+
+    /*
+    // alternive method, does not seem faster
+    protected override void OnPaint(PaintEventArgs paintEventArgs)
+    {
+      Matrix mx = new Matrix(); // create an identity matrix
+      mx.Scale(zoom, zoom); // zoom image
+
+      Graphics graphics = paintEventArgs.Graphics;
+      graphics.InterpolationMode = InterpolationMode.Low;
+      graphics.Transform = mx;
+      graphics.DrawImage(Image, activeTranslation);
+    }
+    */
 
     bool dragging;
     float zoom;

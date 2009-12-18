@@ -62,7 +62,7 @@
     </Compile>
     <Compile Include="Solution.cs" />
     <Compile Include="NWImageViewer.cs">
-      <SubType>Component</SubType>
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="NWImageViewer.Designer.cs">
       <DependentUpon>NWImageViewer.cs</DependentUpon>
