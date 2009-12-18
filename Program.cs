@@ -11,6 +11,43 @@ namespace DepCharter
 {
   class Program
   {
+    public static void PopulateSolutionTree(TreeView treeView, string searchDir, string searchMask)
+    {
+      TreeNode rootNode = treeView.Nodes.Add(searchDir);
+      ProcessDir(searchDir, searchMask, rootNode.Nodes, 0);
+    }
+
+    const int HowDeepToScan = 4;
+
+    public static void ProcessDir(string searchDir, string searchMask, TreeNodeCollection nodes, int recursionLvl)
+    {
+      if (recursionLvl <= HowDeepToScan)
+      {
+        // Process the list of files found in the directory. 
+        foreach (string file in Directory.GetFiles(searchDir, searchMask))
+        {
+          nodes.Add(Path.GetFileName(file));
+        }
+ 
+        // Recurse into subdirectories of this directory.
+        string[] subdirEntries = Directory.GetDirectories(searchDir);
+        foreach (string subdir in subdirEntries)
+        {
+          TreeNode subNode = nodes.Add(subdir.Substring(subdir.LastIndexOf("\\") + 1));
+
+          // Do not iterate through reparse points
+          if ((File.GetAttributes(subdir) & FileAttributes.ReparsePoint) != FileAttributes.ReparsePoint)
+          {
+            ProcessDir(subdir, searchMask, subNode.Nodes, recursionLvl + 1);
+          }
+          if (subNode.Nodes.Count == 0)
+          {
+            nodes.Remove(subNode);
+          }
+        }
+      }
+    }
+
     static void Execute()
     {
 
@@ -24,43 +61,46 @@ namespace DepCharter
 
       if (Settings.configwindow)
       {
-        ConfigForm aConfigForm = new ConfigForm();
-        aConfigForm.cbReduce.Checked = Settings.reduce;
-        aConfigForm.cbTrueType.Checked = Settings.truetypefont;
+        CharterForm aCharterForm = new CharterForm();
+
+        //PopulateSolutionTree(aCharterForm.solutionTree, "d:\\project", "*.sln");
+ 
+        aCharterForm.cbReduce.Checked = Settings.reduce;
+        aCharterForm.cbTrueType.Checked = Settings.truetypefont;
 
         if (Settings.fontsize > 0)
         {
-          aConfigForm.cbFontsize.Checked = true;
-          aConfigForm.tbFontsize.Text = Settings.fontsize.ToString();
+          aCharterForm.cbFontsize.Checked = true;
+          aCharterForm.tbFontsize.Text = Settings.fontsize.ToString();
         }
         
         foreach (Project project in solution.projects.Values)
         {
-            int index = aConfigForm.projectsBox.Items.Add(project.name);
+            int index = aCharterForm.projectsBox.Items.Add(project.name);
             if (!project.ignore)
             {
-              aConfigForm.projectsBox.SetSelected(index, true);
+              aCharterForm.projectsBox.SetSelected(index, true);
             }
         }
-        DialogResult result = aConfigForm.ShowDialog();
+        DialogResult result = aCharterForm.ShowDialog();
         if (result != DialogResult.OK)
         {
           // no nothing if the config-window is close with the top-right 'x' button
           return;
         }
-        Settings.reduce = aConfigForm.cbReduce.Checked;
-        Settings.truetypefont = aConfigForm.cbTrueType.Checked;
+        Settings.reduce = aCharterForm.cbReduce.Checked;
+        Settings.truetypefont = aCharterForm.cbTrueType.Checked;
 
         Settings.fontsize = 0;
-        if (aConfigForm.cbFontsize.Checked)
+        if (aCharterForm.cbFontsize.Checked)
         {
-          Int32.TryParse(aConfigForm.tbFontsize.Text, out Settings.fontsize);
+          Int32.TryParse(aCharterForm.tbFontsize.Text, out Settings.fontsize);
         }
 
         Settings.aspectratio = 0.7;
-        if (aConfigForm.cbAspect.Checked)
+        if (aCharterForm.cbAspect.Checked)
         {
-          Double.TryParse(aConfigForm.tbAspect.Text, out Settings.aspectratio);
+          Double.TryParse(aCharterForm.tbAspect.Text, out Settings.aspectratio);
         }
 
         Settings.projectsList.Clear();
@@ -71,7 +111,7 @@ namespace DepCharter
             project.ignore = true;
         }
 
-        foreach (string selectedProject in aConfigForm.projectsBox.SelectedItems)
+        foreach (string selectedProject in aCharterForm.projectsBox.SelectedItems)
         {
           solution.projectsByName[selectedProject].ignore = false;
         }
