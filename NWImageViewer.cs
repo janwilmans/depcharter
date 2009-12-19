@@ -10,10 +10,111 @@ using System.IO;
 
 namespace depcharter
 {
+  public class ImageViewport
+  {
+    public Point Location { 
+      get
+      {
+        if (dirty) recalculate();
+        return location;
+      }
+      set
+      {
+        location = value;
+        dirty = true;
+      }
+    }
+
+    // real size of the control's drawing area
+    public Size Size
+    {
+      get
+      {
+        return size;
+      }
+      set
+      {
+        size = value;
+        dirty = true;
+      }
+    }
+
+    // real size of the image
+    public Size ImageSize
+    {
+      get
+      {
+        return imageSize;
+      }
+      set
+      {
+        imageSize = value;
+        dirty = true;
+      }
+    }
+
+    public float Zoom { 
+      get
+      {
+        return zoom;
+      }
+      set
+      {
+        zoom = value;
+        dirty = true;
+      }
+    }
+
+    public int MaxLocX
+    {
+      get
+      {
+        return (int) (imageSize.Width - VirtualSize.Width);
+      }
+    }
+
+    public int MaxLocY
+    {
+      get
+      {
+        return (int) (imageSize.Height - VirtualSize.Height);
+      }
+    }
+
+    public Size VirtualSize
+    {
+      get
+      {
+        return new Size((int)(size.Width*zoom), (int)(size.Height*zoom));
+      }
+    }
+
+    // input: location
+    // ouput: location
+    private void recalculate()
+    {
+      if (location.X < 0) location.X = 0;
+      if (location.Y < 0) location.Y = 0;
+
+      if (location.X > MaxLocX) location.X = MaxLocX;
+      if (location.Y > MaxLocY) location.Y = MaxLocY;
+
+      Console.WriteLine("recalculate()");
+      dirty = false;
+    }
+
+    private float zoom;
+    private Point location;
+    private Size imageSize;
+    private Size size;
+    private bool dirty;
+  }
+
   public partial class NWImageViewerBase : System.Windows.Forms.UserControl
   {
     public Image Image { get; set; }
     public TextureBrush Brush { get; set; }
+    public ImageViewport ImageViewport { get; set; }
   }
 
   public partial class NWImageViewer : NWImageViewerBase
@@ -36,14 +137,12 @@ namespace depcharter
       this.MouseWheel += new MouseEventHandler(this.MouseWheel_event);
       this.MouseLeave += new EventHandler(this.MouseLeave_event);
       this.MouseMove += new MouseEventHandler(this.MouseMove_event);
+
+      ImageViewport = new ImageViewport();
+      ImageViewport.Size = this.Size;
+
       
       //FontDialog flg = new FontDialog(); flg.ShowDialog(); tb.FontName = flg.Font;
-    }
-
-    private Point screenPoint(Point point)
-    {
-      // return a screen-relative point
-      return new Point(this.Left + point.X, this.Top + point.Y);
     }
 
     private Point screenPoint(int x, int y)
@@ -79,7 +178,7 @@ namespace depcharter
         activeTranslation.X = lastTranslation.X + mouseDownLocation.X - currentLocation.X;
         activeTranslation.Y = lastTranslation.Y + mouseDownLocation.Y - currentLocation.Y;
 
-        applyLimits(ref activeTranslation);
+        ImageViewport.Location = activeTranslation;
     
         Console.WriteLine("down x/y: " + activeTranslation.X + ", " + activeTranslation.Y);
         this.Invalidate();
@@ -107,7 +206,7 @@ namespace depcharter
     protected override void OnSizeChanged(EventArgs e)
     {
       base.OnSizeChanged(e);
-      applyLimits(ref activeTranslation);
+      ImageViewport.Size = this.Size;
       this.Invalidate();
     }
 
