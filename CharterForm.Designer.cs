@@ -30,6 +30,7 @@
         {
           this.components = new System.ComponentModel.Container();
           System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CharterForm));
+          ImageViewport imageViewport1 = new ImageViewport();
           this.projectsBox = new System.Windows.Forms.ListBox();
           this.HelpText = new System.Windows.Forms.ToolTip(this.components);
           this.btGenerate = new System.Windows.Forms.Button();
@@ -43,12 +44,9 @@
           this.solutionTree = new System.Windows.Forms.TreeView();
           this.bottomLeftPanel = new System.Windows.Forms.Panel();
           this.cbReduce = new System.Windows.Forms.CheckBox();
-          this.statusStrip = new System.Windows.Forms.StatusStrip();
-          this.statusButtons = new System.Windows.Forms.ToolStripDropDownButton();
-          this.fitImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-          this.fullImageToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-          this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
           this.nwImageViewer1 = new depcharter.NWImageViewer();
+          this.statusStrip = new System.Windows.Forms.StatusStrip();
+          this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
           this.mainSplitpanel.Panel1.SuspendLayout();
           this.mainSplitpanel.Panel2.SuspendLayout();
           this.mainSplitpanel.SuspendLayout();
@@ -81,6 +79,7 @@
           this.btGenerate.TabIndex = 6;
           this.btGenerate.Text = "Generate graph";
           this.btGenerate.UseVisualStyleBackColor = true;
+          this.btGenerate.Click += new System.EventHandler(this.btGenerate_Click);
           // 
           // cbTrueType
           // 
@@ -203,58 +202,37 @@
           this.cbReduce.Text = "reduce";
           this.cbReduce.UseVisualStyleBackColor = true;
           // 
+          // nwImageViewer1
+          // 
+          this.nwImageViewer1.Dock = System.Windows.Forms.DockStyle.Fill;
+          this.nwImageViewer1.Image = ((System.Drawing.Image)(resources.GetObject("nwImageViewer1.Image")));
+          imageViewport1.DrawingAreaSize = new System.Drawing.Size(725, 551);
+          imageViewport1.ImageSize = new System.Drawing.Size(4023, 2267);
+          imageViewport1.Location = new System.Drawing.Point(0, 0);
+          imageViewport1.Zoom = 1F;
+          this.nwImageViewer1.ImageViewport = imageViewport1;
+          this.nwImageViewer1.Location = new System.Drawing.Point(0, 0);
+          this.nwImageViewer1.Name = "nwImageViewer1";
+          this.nwImageViewer1.Size = new System.Drawing.Size(725, 551);
+          this.nwImageViewer1.TabIndex = 15;
+          // 
           // statusStrip
           // 
           this.statusStrip.BackColor = System.Drawing.Color.LightSkyBlue;
           this.statusStrip.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
           this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusButtons,
-            this.lblStatus});
+            this.statusLabel});
           this.statusStrip.Location = new System.Drawing.Point(0, 551);
           this.statusStrip.Name = "statusStrip";
           this.statusStrip.Size = new System.Drawing.Size(725, 22);
           this.statusStrip.TabIndex = 14;
           this.statusStrip.Text = "statusStrip1";
           // 
-          // statusButtons
+          // statusLabel
           // 
-          this.statusButtons.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-          this.statusButtons.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.fitImageToolStripMenuItem,
-            this.fullImageToolStripMenuItem});
-          this.statusButtons.Image = ((System.Drawing.Image)(resources.GetObject("statusButtons.Image")));
-          this.statusButtons.ImageTransparentColor = System.Drawing.Color.Magenta;
-          this.statusButtons.Name = "statusButtons";
-          this.statusButtons.Size = new System.Drawing.Size(29, 20);
-          // 
-          // fitImageToolStripMenuItem
-          // 
-          this.fitImageToolStripMenuItem.Name = "fitImageToolStripMenuItem";
-          this.fitImageToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
-          this.fitImageToolStripMenuItem.Text = "Fit image";
-          this.fitImageToolStripMenuItem.Click += new System.EventHandler(this.fitImageToolStripMenuItem_Click);
-          // 
-          // fullImageToolStripMenuItem
-          // 
-          this.fullImageToolStripMenuItem.Name = "fullImageToolStripMenuItem";
-          this.fullImageToolStripMenuItem.Size = new System.Drawing.Size(121, 22);
-          this.fullImageToolStripMenuItem.Text = "Full image";
-          this.fullImageToolStripMenuItem.Click += new System.EventHandler(this.fullImageToolStripMenuItem_Click);
-          // 
-          // lblStatus
-          // 
-          this.lblStatus.Name = "lblStatus";
-          this.lblStatus.Size = new System.Drawing.Size(100, 17);
-          this.lblStatus.Text = "Display: Zoom to fit";
-          // 
-          // nwImageViewer1
-          // 
-          this.nwImageViewer1.Dock = System.Windows.Forms.DockStyle.Fill;
-          this.nwImageViewer1.Image = ((System.Drawing.Image)(resources.GetObject("nwImageViewer1.Image")));
-          this.nwImageViewer1.Location = new System.Drawing.Point(0, 0);
-          this.nwImageViewer1.Name = "nwImageViewer1";
-          this.nwImageViewer1.Size = new System.Drawing.Size(725, 551);
-          this.nwImageViewer1.TabIndex = 15;
+          this.statusLabel.Name = "statusLabel";
+          this.statusLabel.Size = new System.Drawing.Size(52, 17);
+          this.statusLabel.Text = "Zoom 1:1";
           // 
           // CharterForm
           // 
@@ -295,14 +273,11 @@
         public System.Windows.Forms.TextBox tbAspect;
         private System.Windows.Forms.SplitContainer mainSplitpanel;
         private System.Windows.Forms.StatusStrip statusStrip;
-        private System.Windows.Forms.ToolStripStatusLabel lblStatus;
-        private System.Windows.Forms.ToolStripDropDownButton statusButtons;
-        private System.Windows.Forms.ToolStripMenuItem fitImageToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem fullImageToolStripMenuItem;
         public System.Windows.Forms.CheckBox cbReduce;
         private System.Windows.Forms.Panel bottomLeftPanel;
         public System.Windows.Forms.TreeView solutionTree;
         private System.Windows.Forms.Panel topleftPanel;
         private depcharter.NWImageViewer nwImageViewer1;
+        public System.Windows.Forms.ToolStripStatusLabel statusLabel;
     }
 }
