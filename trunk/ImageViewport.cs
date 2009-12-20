@@ -85,7 +85,6 @@ public class ImageViewport
     if (newZoom < (1 + zoomStep) && newZoom > (1 - zoomStep))
     {
       newZoom = 1.0F;
-      Console.WriteLine("zoom locked to: {0}", newZoom);
     }
 
     if ((drawingAreaSize.Width / newZoom) > imageWidth)

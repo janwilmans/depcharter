@@ -14,7 +14,14 @@ namespace DepCharter
       public CharterForm()
         {
             InitializeComponent();
-            this.ResumeLayout(false);
+            nwImageViewer1.Invalidated += new InvalidateEventHandler(updateStatus);
+            ResumeLayout(false);
+        }
+
+      private void updateStatus(object sender, EventArgs e)
+        {
+
+          statusLabel.Text = "Zoom " + String.Format("{0}%", (int)(nwImageViewer1.ImageViewport.Zoom * 100));
         }
 
         private void cbFontsize_CheckedChanged(object sender, EventArgs e)
@@ -27,19 +34,10 @@ namespace DepCharter
           tbAspect.Enabled = cbAspect.Checked;
         }
 
-        private void fitImageToolStripMenuItem_Click(object sender, EventArgs e)
+        private void btGenerate_Click(object sender, EventArgs e)
         {
-          //pictureBox.SizeMode = PictureBoxSizeMode.AutoSize;
+          // generate graph using dot here
         }
 
-        private void fullImageToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-          //pictureBox.SizeMode = PictureBoxSizeMode.Normal;
-        }
-
-        private void imageViewer_Click(object sender, EventArgs e)
-        {
-
-        }
     }
 }
