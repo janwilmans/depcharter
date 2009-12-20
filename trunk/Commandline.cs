@@ -8,7 +8,6 @@ using System.Globalization;
 
 namespace DepCharter
 {
-
   enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config }
 
   class Settings
