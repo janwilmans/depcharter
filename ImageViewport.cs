@@ -30,6 +30,11 @@ public class ImageViewport
     }
     set
     {
+      if (value.X < 0) value.X = 0;
+      if (value.Y < 0) value.Y = 0;
+
+      if (value.X > this.MaxLocX) value.X = this.MaxLocX;
+      if (value.Y > this.MaxLocY) value.Y = this.MaxLocY;
       location = value;
     }
   }
@@ -44,7 +49,7 @@ public class ImageViewport
     set
     {
       drawingAreaSize = value;
-      Initialize();
+      Location = location;  // re-apply limits
     }
   }
 
@@ -98,7 +103,8 @@ public class ImageViewport
     if (zoomToFocusPoint)
     {
       // zoom to focusPoint
-      portMiddle = new Point(location.X + focusPoint.X, location.Y + focusPoint.Y);
+      // todo: translate focusPoint to real-image-relative coordinates
+      portMiddle = new Point(location.X + ((int)(focusPoint.X/zoom)), location.Y + ((int)(focusPoint.Y/zoom)));
     }
     else
     {
@@ -107,19 +113,8 @@ public class ImageViewport
     }
 
     zoom = newZoom;
-    location.X = portMiddle.X - (Size.Width / 2);
-    location.Y = portMiddle.Y - (Size.Height / 2);
-    applyLimits();
+    Location = new Point(portMiddle.X - (Size.Width / 2), portMiddle.Y - (Size.Height / 2));
     return result;
-  }
-
-  private void applyLimits()
-  {
-    if (location.X < 0) location.X = 0;
-    if (location.Y < 0) location.Y = 0;
-
-    if (location.X > MaxLocX) location.X = MaxLocX;
-    if (location.Y > MaxLocY) location.Y = MaxLocY;
   }
 
   float zoomStep = 0.1F;
@@ -127,7 +122,7 @@ public class ImageViewport
   {
     float newZoom = zoom + zoomStep;
     if (newZoom > 3.0) newZoom = 3.0F;
-    return changeZoom(newZoom, false, focusPoint);
+    return changeZoom(newZoom, true, focusPoint);
   }
 
   public bool ZoomOut(Point focusPoint)
@@ -140,7 +135,14 @@ public class ImageViewport
   {
     get
     {
-      return imageSize.Width - Size.Width;
+      if (Size.Width > imageSize.Width)
+      {
+        return 0;
+      }
+      else
+      {
+        return imageSize.Width - Size.Width;
+      }
     }
   }
 
@@ -148,7 +150,14 @@ public class ImageViewport
   {
     get
     {
-      return imageSize.Height - Size.Height;
+      if (Size.Height > imageSize.Height)
+      {
+        return 0;
+      }
+      else
+      {
+        return imageSize.Height - Size.Height;
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
@@ -11,42 +12,86 @@ namespace DepCharter
 {
   class Program
   {
-    public static void PopulateSolutionTree(TreeView treeView, string searchDir, string searchMask)
+
+    delegate void InvPerformStep();
+    delegate TreeNode InvAddNode(string text);
+    delegate void InvRemoveNode(TreeNode node);
+
+    public static void PopulateSolutionTree(CharterForm control, string searchDir, string searchMask)
     {
-      TreeNode rootNode = treeView.Nodes.Add(searchDir);
-      ProcessDir(searchDir, searchMask, rootNode.Nodes, 0);
+      //TreeNode rootNode = treeView.Nodes.Add(searchDir);
+      TreeNode rootNode = (TreeNode)control.Invoke(new InvAddNode(control.solutionTree.Nodes.Add), searchDir);
+      ProcessDir(searchDir, searchMask, control, rootNode, 0);
     }
 
     const int HowDeepToScan = 4;
 
-    public static void ProcessDir(string searchDir, string searchMask, TreeNodeCollection nodes, int recursionLvl)
+    public static void ProcessDir(string searchDir, string searchMask, CharterForm control, TreeNode node, int recursionLvl)
     {
       if (recursionLvl <= HowDeepToScan)
       {
-        // Process the list of files found in the directory. 
-        foreach (string file in Directory.GetFiles(searchDir, searchMask))
+        control.Invoke(new InvPerformStep(control.progressBar.PerformStep));
+
+        string[] dirs = new string[0];
+        try
         {
-          nodes.Add(Path.GetFileName(file));
+          dirs = Directory.GetFiles(searchDir, searchMask);
+        }
+        catch (Exception ex) { }
+
+        // Process the list of files found in the directory. 
+        foreach (string file in dirs)
+        {
+          //node.Nodes.Add(Path.GetFileName(file));
+          control.Invoke(new InvAddNode(node.Nodes.Add), Path.GetFileName(file));
         }
  
         // Recurse into subdirectories of this directory.
-        string[] subdirEntries = Directory.GetDirectories(searchDir);
+        string[] subdirEntries = new string[0];
+        try
+        {
+          subdirEntries = Directory.GetDirectories(searchDir);
+        }
+        catch (Exception ex) { }
+
         foreach (string subdir in subdirEntries)
         {
-          TreeNode subNode = nodes.Add(subdir.Substring(subdir.LastIndexOf("\\") + 1));
+          //TreeNode subNode = nodes.Add(subdir.Substring(subdir.LastIndexOf("\\") + 1));
+          TreeNode subNode = (TreeNode)control.Invoke(new InvAddNode(node.Nodes.Add), subdir.Substring(subdir.LastIndexOf("\\") + 1));
 
           // Do not iterate through reparse points
           if ((File.GetAttributes(subdir) & FileAttributes.ReparsePoint) != FileAttributes.ReparsePoint)
           {
-            ProcessDir(subdir, searchMask, subNode.Nodes, recursionLvl + 1);
+            ProcessDir(subdir, searchMask, control, subNode, recursionLvl + 1);
           }
           if (subNode.Nodes.Count == 0)
           {
-            nodes.Remove(subNode);
+            //node.Nodes.Remove(subNode);
+            control.Invoke(new InvRemoveNode(node.Nodes.Remove), subNode);
+
           }
         }
       }
     }
+
+    /*
+public delegate string function(object[] params); 
+
+public string foo(object[] parameters) 
+{ 
+if(InvokeRequired) 
+{ 
+Debug.WriteLine("not in the right thread"); 
+return (string)Invoke(new function(foo),parameters); 
+} 
+else 
+{ 
+return "cool, huh?"; 
+} 
+}
+*/
+
+
 
     static void Execute()
     {
@@ -229,6 +274,7 @@ namespace DepCharter
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+    [STAThread]
     static void Main(string[] args)
     {
       Settings.Initialize();

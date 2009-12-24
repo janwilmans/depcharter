@@ -10,7 +10,6 @@ using System.IO;
 
 namespace depcharter
 {
-
   public partial class NWImageViewerBase : System.Windows.Forms.UserControl
   {
     public Image Image { get; set; }

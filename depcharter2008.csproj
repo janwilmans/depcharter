@@ -44,6 +44,10 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
+    <Reference Include="Tree2, Version=1.0.0.0, Culture=neutral, PublicKeyToken=a5d286438ca599aa, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\Tree2.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CharterForm.cs">
@@ -75,6 +79,9 @@
   <ItemGroup>
     <EmbeddedResource Include="CharterForm.resx">
       <DependentUpon>CharterForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NWImageViewer.resx">
+      <DependentUpon>NWImageViewer.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
