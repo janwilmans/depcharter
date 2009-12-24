@@ -41,16 +41,20 @@
           this.tbAspect = new System.Windows.Forms.TextBox();
           this.mainSplitpanel = new System.Windows.Forms.SplitContainer();
           this.topleftPanel = new System.Windows.Forms.Panel();
+          this.explorePanel = new System.Windows.Forms.Panel();
+          this.browseButton = new System.Windows.Forms.Button();
+          this.progressBar = new System.Windows.Forms.ProgressBar();
           this.solutionTree = new System.Windows.Forms.TreeView();
           this.bottomLeftPanel = new System.Windows.Forms.Panel();
           this.cbReduce = new System.Windows.Forms.CheckBox();
-          this.nwImageViewer1 = new depcharter.NWImageViewer();
           this.statusStrip = new System.Windows.Forms.StatusStrip();
           this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
+          this.nwImageViewer1 = new depcharter.NWImageViewer();
           this.mainSplitpanel.Panel1.SuspendLayout();
           this.mainSplitpanel.Panel2.SuspendLayout();
           this.mainSplitpanel.SuspendLayout();
           this.topleftPanel.SuspendLayout();
+          this.explorePanel.SuspendLayout();
           this.bottomLeftPanel.SuspendLayout();
           this.statusStrip.SuspendLayout();
           this.SuspendLayout();
@@ -73,11 +77,11 @@
           this.btGenerate.DialogResult = System.Windows.Forms.DialogResult.OK;
           this.btGenerate.Image = global::depcharter.Properties.Resources.chart_organisation;
           this.btGenerate.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-          this.btGenerate.Location = new System.Drawing.Point(57, 234);
+          this.btGenerate.Location = new System.Drawing.Point(19, 243);
           this.btGenerate.Name = "btGenerate";
           this.btGenerate.Size = new System.Drawing.Size(160, 34);
           this.btGenerate.TabIndex = 6;
-          this.btGenerate.Text = "Generate graph";
+          this.btGenerate.Text = "Regenerate graph";
           this.btGenerate.UseVisualStyleBackColor = true;
           this.btGenerate.Click += new System.EventHandler(this.btGenerate_Click);
           // 
@@ -159,12 +163,41 @@
           // 
           // topleftPanel
           // 
+          this.topleftPanel.Controls.Add(this.explorePanel);
           this.topleftPanel.Controls.Add(this.solutionTree);
           this.topleftPanel.Dock = System.Windows.Forms.DockStyle.Fill;
           this.topleftPanel.Location = new System.Drawing.Point(0, 0);
           this.topleftPanel.Name = "topleftPanel";
           this.topleftPanel.Size = new System.Drawing.Size(263, 289);
           this.topleftPanel.TabIndex = 16;
+          // 
+          // explorePanel
+          // 
+          this.explorePanel.Controls.Add(this.browseButton);
+          this.explorePanel.Controls.Add(this.progressBar);
+          this.explorePanel.Dock = System.Windows.Forms.DockStyle.Bottom;
+          this.explorePanel.Location = new System.Drawing.Point(0, 248);
+          this.explorePanel.Name = "explorePanel";
+          this.explorePanel.Size = new System.Drawing.Size(263, 41);
+          this.explorePanel.TabIndex = 15;
+          // 
+          // browseButton
+          // 
+          this.browseButton.Location = new System.Drawing.Point(210, 10);
+          this.browseButton.Name = "browseButton";
+          this.browseButton.Size = new System.Drawing.Size(25, 23);
+          this.browseButton.TabIndex = 1;
+          this.browseButton.Text = "...";
+          this.browseButton.UseVisualStyleBackColor = true;
+          this.browseButton.Click += new System.EventHandler(this.browseButton_Click);
+          // 
+          // progressBar
+          // 
+          this.progressBar.Location = new System.Drawing.Point(21, 10);
+          this.progressBar.Name = "progressBar";
+          this.progressBar.Size = new System.Drawing.Size(160, 23);
+          this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+          this.progressBar.TabIndex = 0;
           // 
           // solutionTree
           // 
@@ -202,20 +235,6 @@
           this.cbReduce.Text = "reduce";
           this.cbReduce.UseVisualStyleBackColor = true;
           // 
-          // nwImageViewer1
-          // 
-          this.nwImageViewer1.Dock = System.Windows.Forms.DockStyle.Fill;
-          this.nwImageViewer1.Image = ((System.Drawing.Image)(resources.GetObject("nwImageViewer1.Image")));
-          imageViewport1.DrawingAreaSize = new System.Drawing.Size(725, 551);
-          imageViewport1.ImageSize = new System.Drawing.Size(4023, 2267);
-          imageViewport1.Location = new System.Drawing.Point(0, 0);
-          imageViewport1.Zoom = 1F;
-          this.nwImageViewer1.ImageViewport = imageViewport1;
-          this.nwImageViewer1.Location = new System.Drawing.Point(0, 0);
-          this.nwImageViewer1.Name = "nwImageViewer1";
-          this.nwImageViewer1.Size = new System.Drawing.Size(725, 551);
-          this.nwImageViewer1.TabIndex = 15;
-          // 
           // statusStrip
           // 
           this.statusStrip.BackColor = System.Drawing.Color.LightSkyBlue;
@@ -233,6 +252,20 @@
           this.statusLabel.Name = "statusLabel";
           this.statusLabel.Size = new System.Drawing.Size(52, 17);
           this.statusLabel.Text = "Zoom 1:1";
+          // 
+          // nwImageViewer1
+          // 
+          this.nwImageViewer1.Dock = System.Windows.Forms.DockStyle.Fill;
+          this.nwImageViewer1.Image = ((System.Drawing.Image)(resources.GetObject("nwImageViewer1.Image")));
+          imageViewport1.DrawingAreaSize = new System.Drawing.Size(725, 551);
+          imageViewport1.ImageSize = new System.Drawing.Size(4023, 2267);
+          imageViewport1.Location = new System.Drawing.Point(0, 0);
+          imageViewport1.Zoom = 1F;
+          this.nwImageViewer1.ImageViewport = imageViewport1;
+          this.nwImageViewer1.Location = new System.Drawing.Point(0, 0);
+          this.nwImageViewer1.Name = "nwImageViewer1";
+          this.nwImageViewer1.Size = new System.Drawing.Size(725, 551);
+          this.nwImageViewer1.TabIndex = 15;
           // 
           // CharterForm
           // 
@@ -253,6 +286,7 @@
           this.mainSplitpanel.Panel2.PerformLayout();
           this.mainSplitpanel.ResumeLayout(false);
           this.topleftPanel.ResumeLayout(false);
+          this.explorePanel.ResumeLayout(false);
           this.bottomLeftPanel.ResumeLayout(false);
           this.bottomLeftPanel.PerformLayout();
           this.statusStrip.ResumeLayout(false);
@@ -279,5 +313,8 @@
         private System.Windows.Forms.Panel topleftPanel;
         private depcharter.NWImageViewer nwImageViewer1;
         public System.Windows.Forms.ToolStripStatusLabel statusLabel;
+        public System.Windows.Forms.Panel explorePanel;
+        public System.Windows.Forms.ProgressBar progressBar;
+        public System.Windows.Forms.Button browseButton;
     }
 }

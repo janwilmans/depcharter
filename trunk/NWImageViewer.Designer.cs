@@ -28,7 +28,14 @@
     /// </summary>
     private void InitializeComponent()
     {
-      components = new System.ComponentModel.Container();
+      this.SuspendLayout();
+      // 
+      // NWImageViewerBase
+      // 
+      this.Name = "NWImageViewerBase";
+      this.Size = new System.Drawing.Size(227, 150);
+      this.ResumeLayout(false);
+
     }
 
     #endregion
