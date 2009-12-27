@@ -13,6 +13,8 @@ namespace DepCharter
 {
     public partial class CharterForm : Form
     {
+
+
       public CharterForm()
         {
           InitializeComponent();
@@ -40,21 +42,30 @@ namespace DepCharter
           // generate graph using dot here
         }
 
-        string folderName = "";
         private void browseButton_Click(object sender, EventArgs e)
         {
           FolderBrowserDialog folderDialog = new FolderBrowserDialog();
           if (folderDialog.ShowDialog() == DialogResult.OK)
           {
-            folderName = folderDialog.SelectedPath;
-            Thread thread = new Thread(new ThreadStart(this.FillTree));
+            Thread thread = new Thread(delegate()
+            {
+              this.FillTree(folderDialog.SelectedPath);
+            });
+            thread.IsBackground = false;
             thread.Start();
           }
         }
 
-        private void FillTree()
+        private void FillTree(string foldername)
         {
-          Program.PopulateSolutionTree(this, folderName, "*.sln");
+          //try
+          {
+            Program.PopulateSolutionTree(this, foldername, "*.sln");
+          }
+          //catch (Exception)
+          {
+            // ignore any exceptions (occurs if the process is forced to close)
+          }
         }
     }
 }
