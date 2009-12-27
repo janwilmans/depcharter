@@ -12,38 +12,52 @@ namespace DepCharter
 {
   class Program
   {
-
-    delegate void InvPerformStep();
-    delegate TreeNode InvAddNode(string text);
-    delegate void InvRemoveNode(TreeNode node);
-
     public static void PopulateSolutionTree(CharterForm control, string searchDir, string searchMask)
     {
-      //TreeNode rootNode = treeView.Nodes.Add(searchDir);
-      TreeNode rootNode = (TreeNode)control.Invoke(new InvAddNode(control.solutionTree.Nodes.Add), searchDir);
+      TreeNode rootNode = null;
+
+      control.Invoke((Action)delegate()
+      {
+        control.progressBar.Style = ProgressBarStyle.Marquee;
+        control.progressBar.MarqueeAnimationSpeed = 10;
+        rootNode = control.solutionTree.Nodes.Add(searchDir);
+      });
+
       ProcessDir(searchDir, searchMask, control, rootNode, 0);
+      control.Invoke((Action)delegate()
+      {
+        control.progressBar.Style = ProgressBarStyle.Blocks;
+        control.progressBar.Value = control.progressBar.Maximum;
+      });
     }
 
     const int HowDeepToScan = 4;
-
     public static void ProcessDir(string searchDir, string searchMask, CharterForm control, TreeNode node, int recursionLvl)
     {
       if (recursionLvl <= HowDeepToScan)
       {
-        control.Invoke(new InvPerformStep(control.progressBar.PerformStep));
+        control.Invoke((Action)delegate()
+        {
+          //control.progressBar.PerformStep();
+        });
 
         string[] dirs = new string[0];
         try
         {
           dirs = Directory.GetFiles(searchDir, searchMask);
         }
-        catch (Exception ex) { }
+        catch (Exception) 
+        {
+          dirs = new string[0];
+        }
 
         // Process the list of files found in the directory. 
         foreach (string file in dirs)
         {
-          //node.Nodes.Add(Path.GetFileName(file));
-          control.Invoke(new InvAddNode(node.Nodes.Add), Path.GetFileName(file));
+          control.Invoke((Action)delegate()
+          {
+            node.Nodes.Add(Path.GetFileName(file));
+          });
         }
  
         // Recurse into subdirectories of this directory.
@@ -52,12 +66,18 @@ namespace DepCharter
         {
           subdirEntries = Directory.GetDirectories(searchDir);
         }
-        catch (Exception ex) { }
+        catch (Exception ) 
+        {
+          subdirEntries = new string[0];
+        }
 
         foreach (string subdir in subdirEntries)
         {
-          //TreeNode subNode = nodes.Add(subdir.Substring(subdir.LastIndexOf("\\") + 1));
-          TreeNode subNode = (TreeNode)control.Invoke(new InvAddNode(node.Nodes.Add), subdir.Substring(subdir.LastIndexOf("\\") + 1));
+          TreeNode subNode = null;
+          control.Invoke((Action)delegate()
+          {
+            subNode = node.Nodes.Add(subdir.Substring(subdir.LastIndexOf("\\") + 1));
+          });
 
           // Do not iterate through reparse points
           if ((File.GetAttributes(subdir) & FileAttributes.ReparsePoint) != FileAttributes.ReparsePoint)
@@ -66,35 +86,19 @@ namespace DepCharter
           }
           if (subNode.Nodes.Count == 0)
           {
-            //node.Nodes.Remove(subNode);
-            control.Invoke(new InvRemoveNode(node.Nodes.Remove), subNode);
+            control.Invoke((Action) delegate() 
+            {
+              node.Nodes.Remove(subNode);
+            });
 
           }
         }
       }
     }
 
-    /*
-public delegate string function(object[] params); 
-
-public string foo(object[] parameters) 
-{ 
-if(InvokeRequired) 
-{ 
-Debug.WriteLine("not in the right thread"); 
-return (string)Invoke(new function(foo),parameters); 
-} 
-else 
-{ 
-return "cool, huh?"; 
-} 
-}
-*/
-
-
-
     static void Execute()
     {
+      Application.EnableVisualStyles();
 
       Solution solution = new Solution(Settings.input);
       solution.resolveIds();
