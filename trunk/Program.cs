@@ -7,11 +7,101 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Xml;
+using System.Xml.XPath;
 
 namespace DepCharter
 {
+  class DotWriter
+  {
+    public StreamWriter dotFile;
+
+    public DotWriter(string filename)
+    {
+      string dotFileName = Settings.workdir + filename;
+      if (File.Exists(dotFileName))
+      {
+        File.Delete(dotFileName);
+      }
+      dotFile = File.CreateText(dotFileName);
+      Console.WriteLine("Created " + dotFileName);
+      dotFile.WriteLine("digraph G {");   // the first line for the .dot file
+    }
+
+    public void Close()
+    {
+      dotFile.WriteLine("}");
+      dotFile.Close();      
+    }
+
+    public void WriteAspectRatio(double ratio)
+    {
+      if (ratio > 0.01)
+      {
+        // prevent any regional settings from interfering with number formatting
+        String ratioString = String.Format(CultureInfo.CreateSpecificCulture("en-us"), "aspect={0: #0.0}", Settings.aspectratio); 
+        dotFile.WriteLine(ratioString);
+      }
+    }
+
+    public void WriteTTFont(string font)
+    {
+       Console.WriteLine("Using truetype font ({0})", font);
+       dotFile.WriteLine("fontname={0}", font);
+    }
+     
+    public void WriteFontSize(int fontSize)
+    {
+      if (fontSize > 0)
+      {
+        Console.WriteLine("Using node fontsize = " + fontSize);
+        dotFile.WriteLine("node [fontsize=" + fontSize + "]");
+      }
+    }
+
+    static public void reduceDotfile(string inputname, string outputname)
+    {
+      System.Diagnostics.Process tredProc = new System.Diagnostics.Process();
+      Console.WriteLine("Using tred to create reduced {0}", inputname);
+      tredProc.StartInfo.FileName = "tred.exe";
+      tredProc.StartInfo.Arguments = inputname;
+      tredProc.StartInfo.UseShellExecute = false;
+      tredProc.StartInfo.RedirectStandardOutput = true;
+      tredProc.Start();
+      string tredOutput = tredProc.StandardOutput.ReadToEnd();
+      tredProc.WaitForExit();
+
+      if (File.Exists(outputname)) File.Delete(outputname);
+      StreamWriter writer = new StreamWriter(outputname);
+      writer.Write(tredOutput);
+      writer.Close();
+    }
+
+    static public void createPngFromDot(string dotInputname, string pngOutputname)
+    {
+      if (File.Exists(pngOutputname)) File.Delete(pngOutputname);
+      System.Diagnostics.Process proc = new System.Diagnostics.Process();
+      proc.StartInfo.FileName = "dot.exe";
+      proc.StartInfo.Arguments = " -Tpng " + dotInputname + " -o " + pngOutputname;
+      proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+      proc.Start();
+      proc.WaitForExit();
+    }
+
+  }
+
   class Program
   {
+
+    static public void shellExecute(string filename, string args)
+    {
+      System.Diagnostics.Process proc = new System.Diagnostics.Process();
+      proc.StartInfo.FileName = filename;
+      proc.StartInfo.Arguments = args;
+      proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+      proc.Start();
+    }
+
     public static void PopulateSolutionTree(CharterForm control, string searchDir, string searchMask)
     {
       TreeNode rootNode = null;
@@ -19,7 +109,7 @@ namespace DepCharter
       control.Invoke((Action)delegate()
       {
         control.progressBar.Style = ProgressBarStyle.Marquee;
-        control.progressBar.MarqueeAnimationSpeed = 10;
+        control.progressBar.MarqueeAnimationSpeed = 50;
         rootNode = control.solutionTree.Nodes.Add(searchDir);
       });
 
@@ -36,10 +126,6 @@ namespace DepCharter
     {
       if (recursionLvl <= HowDeepToScan)
       {
-        control.Invoke((Action)delegate()
-        {
-          //control.progressBar.PerformStep();
-        });
 
         string[] dirs = new string[0];
         try
@@ -98,8 +184,6 @@ namespace DepCharter
 
     static void Execute()
     {
-      Application.EnableVisualStyles();
-
       Solution solution = new Solution(Settings.input);
       solution.resolveIds();
       solution.markIgnoredProjects();
@@ -167,6 +251,13 @@ namespace DepCharter
         
       }
 
+      if (deps == 0)
+      {
+        Console.WriteLine("No dependencies, nothing to do...!");
+        MessageBox.Show("No dependencies, nothing to do...!");
+        Environment.Exit(0);
+      }
+
       if (deps > 100)
       {
         if (Settings.reduce)
@@ -179,35 +270,16 @@ namespace DepCharter
         }
       }
 
-      string dotFileName = Settings.workdir + "dep.txt";
-      if (File.Exists(dotFileName))
-      {
-        File.Delete(dotFileName);
-      }
-
-      StreamWriter dotFile = File.CreateText(dotFileName);
-      Console.WriteLine("Created " + dotFileName);
-
-      dotFile.WriteLine("digraph G {");   // the first line for the .dot file
-
-      if (Settings.aspectratio > 0.01)
-      {
-        // prevent any regional settings from interfering with number formatting
-        String ratio = String.Format(CultureInfo.CreateSpecificCulture("en-us"), "aspect={0: #0.0}", Settings.aspectratio); 
-        dotFile.WriteLine(ratio);
-      }
+      string dotFileName = "dep.txt";
+      DotWriter dotWriter = new DotWriter(dotFileName);
+      dotWriter.WriteAspectRatio(Settings.aspectratio);
 
       if (Settings.truetypefont)
       {
-        Console.WriteLine("Using truetype font (calibri)");
-        dotFile.WriteLine("fontname=calibri");
+        dotWriter.WriteTTFont("calibri");
       }
 
-      if (Settings.fontsize > 0)
-      {
-        Console.WriteLine("Using node fontsize = " + Settings.fontsize);
-        dotFile.WriteLine("node [fontsize=" + Settings.fontsize + "]");
-      }
+      dotWriter.WriteFontSize(Settings.fontsize);
              
       //dotFile.WriteLine("ranksep=1.5");
       //dotFile.WriteLine("edge [style=\"setlinewidth(4)\"]");
@@ -218,56 +290,27 @@ namespace DepCharter
       //dotFile.WriteLine("size=1024,700;");
       //dotFile.WriteLine("ratio=expand;"); // expand/fill/compress/auto
 
-      solution.writeDepsInDotCode(dotFile);
-      
-      dotFile.WriteLine("}");
-      dotFile.Close();
+      solution.writeDepsInDotCode(dotWriter.dotFile);
+      dotWriter.Close();
 
       string pngFile = Settings.workdir + solution.name + "_dep.png";
-      if (File.Exists(pngFile)) File.Delete(pngFile);
       string repngFile = Settings.workdir + solution.name + "_redep.png";
-      if (File.Exists(repngFile)) File.Delete(repngFile);
-
-      string redepFile = "redep.txt";
-      if (File.Exists(redepFile)) File.Delete(redepFile);
-
+      
       if (Settings.reduce)
       {
-        System.Diagnostics.Process tredProc = new System.Diagnostics.Process();
-        Console.WriteLine("Using tred to create reduced redep.txt");
-        tredProc.StartInfo.FileName = "tred.exe";
-        tredProc.StartInfo.Arguments = "dep.txt";
-        tredProc.StartInfo.UseShellExecute = false;
-        tredProc.StartInfo.RedirectStandardOutput = true;
-        tredProc.Start();
-        string tredOutput = tredProc.StandardOutput.ReadToEnd();
-        tredProc.WaitForExit();
-
-        StreamWriter writer = new StreamWriter(redepFile);
-        writer.Write(tredOutput);
-        writer.Close();
-
+        string redepFile = "redep.txt";
+        DotWriter.reduceDotfile(dotFileName, redepFile);
         dotFileName = redepFile;
         pngFile = repngFile;
       }
 
       Console.WriteLine("Using dot to create bitmap");
-
-      System.Diagnostics.Process proc = new System.Diagnostics.Process();
-      proc.StartInfo.FileName = "dot.exe";
-      proc.StartInfo.Arguments = " -Tpng " + dotFileName + " -o " + pngFile;
-      proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-      proc.Start();
-      proc.WaitForExit();
-
+      DotWriter.createPngFromDot(dotFileName, pngFile);
       Console.WriteLine("Done.");
 
       if (File.Exists(pngFile))
       {
-        proc.StartInfo.FileName = pngFile;
-        proc.StartInfo.Arguments = "";
-        proc.Start();
-        //proc.WaitForExit();
+        shellExecute(pngFile, "");
       }
       else
       {

@@ -1,123 +1,12 @@
 ﻿using System;
 using System.IO;
-using System.Collections;
-using System.Collections.Generic;
+using System.Collections; // ArrayList
+using System.Collections.Generic; // Dictionary <>
 using System.Windows.Forms;
 using System.Diagnostics;
 
 namespace DepCharter
 {
-
-  class ProjectDictionary : Dictionary<string, Project> { }
-
-  class MyStringReader : StringReader
-  {
-    public MyStringReader(string input) : base(input) { }
-
-    static int linenumber = 1;
-    public override string ReadLine()
-    {
-      string line = base.ReadLine();
-      if (Settings.verbose) Console.WriteLine(linenumber + ": " + line);
-      linenumber++;
-      return line;
-    }
-  }
-
-  class Project
-  {
-    public Project(Solution aSolution, StringReader reader, string firstLine)
-    {
-      solution = aSolution;
-      string part = firstLine.Substring(firstLine.IndexOf(")") + 1);
-      string startOfName = part.Substring(part.IndexOf("\"") + 1);
-      this.name = startOfName.Substring(0, startOfName.IndexOf("\""));
-      string startOfId = startOfName.Substring(startOfName.IndexOf("{"));
-
-      // dependency-id's _must_ be treated case-insensitive
-      this.id = startOfId.ToLower().Substring(0, startOfId.IndexOf("}") + 1);
-
-      if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
-
-      bool addDependencies = false;
-      while (true)
-      {
-        string line = reader.ReadLine();
-        if (line == null)
-        {
-          Console.WriteLine("Unexpected end of solution file! (EndProject line not found)");
-          break;
-        }
-        line = line.Trim();
-        if (line.StartsWith("ProjectSection(ProjectDependencies)"))
-        {
-          addDependencies = true;
-        }
-
-        if (addDependencies)
-        {
-          string depLine = line.ToLower();      // dependency-id's _must_ be treated case-insensitive
-          if (depLine.StartsWith("{"))
-          {
-            string depId = depLine.Substring(0, depLine.IndexOf("}") + 1);
-            dependencyIds.Add(depId);
-            if (Settings.verbose) Console.WriteLine("dependency: " + depId);
-          }
-          if (line.StartsWith("EndProjectSection"))
-          {
-            if (Settings.verbose) Console.WriteLine("EndProjectSection found.\n");
-            break;
-          }
-        }
-        if (line.ToLower().Trim() == "endproject")
-        {
-          if (Settings.verbose) Console.WriteLine("EndProject found.\n");
-          break;
-        }
-      }
-    }
-
-    public void writeDepsInDotCodeRecursive(StreamWriter writer)
-    {
-      writeDepsInDotCode(writer);
-      foreach (Project depProject in this.dependencies)
-      {
-        depProject.writeDepsInDotCodeRecursive(writer);
-      }
-    }
-
-    public void writeDepsInDotCode(StreamWriter writer)
-    {
-      if (this.ignore) return;
-      writer.WriteLine(this.name + " [shape=box,style=filled,color=olivedrab1];");
-      foreach (Project depProject in this.dependencies)
-      {
-        if (depProject.ignore) continue;
-        writer.WriteLine(this.name + " -> " + depProject.name);
-      }
-    }
-
-    public void resolveIds()
-    {
-      foreach (string id in dependencyIds)
-      {
-        //Console.WriteLine("resolve: " + id);
-        Project dependendProject = solution.projects[id];
-        dependencies.Add(dependendProject);
-        dependendProject.users.Add(this);
-      }
-    }
-
-    public ArrayList dependencyIds = new ArrayList();   // project id's (strings)
-    public ArrayList dependencies = new ArrayList();    // project objects
-    public ArrayList users = new ArrayList();           // project objects
-
-    public string name;
-    public string id;
-    public bool ignore;
-    Solution solution;
-  }
-
   class Solution
   {
     public ProjectDictionary projects = new ProjectDictionary();
@@ -152,6 +41,12 @@ namespace DepCharter
           Project project = new Project(this, reader, line);
           this.Add(project);
         }
+      }
+
+      // collect info from vcpro? files
+      foreach (Project project in projects.Values)
+      {
+        project.readProjectFile();
       }
     }
 
