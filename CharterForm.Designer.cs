@@ -30,7 +30,7 @@
         {
           this.components = new System.ComponentModel.Container();
           System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(CharterForm));
-          ImageViewport imageViewport1 = new ImageViewport();
+          ImageViewport imageViewport2 = new ImageViewport();
           this.projectsBox = new System.Windows.Forms.ListBox();
           this.HelpText = new System.Windows.Forms.ToolTip(this.components);
           this.btGenerate = new System.Windows.Forms.Button();
@@ -50,6 +50,7 @@
           this.statusStrip = new System.Windows.Forms.StatusStrip();
           this.statusLabel = new System.Windows.Forms.ToolStripStatusLabel();
           this.nwImageViewer1 = new depcharter.NWImageViewer();
+          this.panel1 = new System.Windows.Forms.Panel();
           this.mainSplitpanel.Panel1.SuspendLayout();
           this.mainSplitpanel.Panel2.SuspendLayout();
           this.mainSplitpanel.SuspendLayout();
@@ -57,6 +58,7 @@
           this.explorePanel.SuspendLayout();
           this.bottomLeftPanel.SuspendLayout();
           this.statusStrip.SuspendLayout();
+          this.panel1.SuspendLayout();
           this.SuspendLayout();
           // 
           // projectsBox
@@ -163,8 +165,8 @@
           // 
           // topleftPanel
           // 
+          this.topleftPanel.Controls.Add(this.panel1);
           this.topleftPanel.Controls.Add(this.explorePanel);
-          this.topleftPanel.Controls.Add(this.solutionTree);
           this.topleftPanel.Dock = System.Windows.Forms.DockStyle.Fill;
           this.topleftPanel.Location = new System.Drawing.Point(0, 0);
           this.topleftPanel.Name = "topleftPanel";
@@ -183,9 +185,10 @@
           // 
           // browseButton
           // 
-          this.browseButton.Location = new System.Drawing.Point(210, 10);
+          this.browseButton.AutoSize = true;
+          this.browseButton.Location = new System.Drawing.Point(199, 7);
           this.browseButton.Name = "browseButton";
-          this.browseButton.Size = new System.Drawing.Size(25, 23);
+          this.browseButton.Size = new System.Drawing.Size(26, 23);
           this.browseButton.TabIndex = 1;
           this.browseButton.Text = "...";
           this.browseButton.UseVisualStyleBackColor = true;
@@ -193,7 +196,7 @@
           // 
           // progressBar
           // 
-          this.progressBar.Location = new System.Drawing.Point(21, 10);
+          this.progressBar.Location = new System.Drawing.Point(21, 7);
           this.progressBar.Name = "progressBar";
           this.progressBar.Size = new System.Drawing.Size(160, 23);
           this.progressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
@@ -204,7 +207,7 @@
           this.solutionTree.Dock = System.Windows.Forms.DockStyle.Fill;
           this.solutionTree.Location = new System.Drawing.Point(0, 0);
           this.solutionTree.Name = "solutionTree";
-          this.solutionTree.Size = new System.Drawing.Size(263, 289);
+          this.solutionTree.Size = new System.Drawing.Size(263, 248);
           this.solutionTree.TabIndex = 14;
           // 
           // bottomLeftPanel
@@ -257,15 +260,24 @@
           // 
           this.nwImageViewer1.Dock = System.Windows.Forms.DockStyle.Fill;
           this.nwImageViewer1.Image = ((System.Drawing.Image)(resources.GetObject("nwImageViewer1.Image")));
-          imageViewport1.DrawingAreaSize = new System.Drawing.Size(725, 551);
-          imageViewport1.ImageSize = new System.Drawing.Size(4023, 2267);
-          imageViewport1.Location = new System.Drawing.Point(0, 0);
-          imageViewport1.Zoom = 1F;
-          this.nwImageViewer1.ImageViewport = imageViewport1;
+          imageViewport2.DrawingAreaSize = new System.Drawing.Size(725, 551);
+          imageViewport2.ImageSize = new System.Drawing.Size(4023, 2267);
+          imageViewport2.Location = new System.Drawing.Point(0, 0);
+          imageViewport2.Zoom = 1F;
+          this.nwImageViewer1.ImageViewport = imageViewport2;
           this.nwImageViewer1.Location = new System.Drawing.Point(0, 0);
           this.nwImageViewer1.Name = "nwImageViewer1";
           this.nwImageViewer1.Size = new System.Drawing.Size(725, 551);
           this.nwImageViewer1.TabIndex = 15;
+          // 
+          // panel1
+          // 
+          this.panel1.Controls.Add(this.solutionTree);
+          this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+          this.panel1.Location = new System.Drawing.Point(0, 0);
+          this.panel1.Name = "panel1";
+          this.panel1.Size = new System.Drawing.Size(263, 248);
+          this.panel1.TabIndex = 16;
           // 
           // CharterForm
           // 
@@ -287,10 +299,12 @@
           this.mainSplitpanel.ResumeLayout(false);
           this.topleftPanel.ResumeLayout(false);
           this.explorePanel.ResumeLayout(false);
+          this.explorePanel.PerformLayout();
           this.bottomLeftPanel.ResumeLayout(false);
           this.bottomLeftPanel.PerformLayout();
           this.statusStrip.ResumeLayout(false);
           this.statusStrip.PerformLayout();
+          this.panel1.ResumeLayout(false);
           this.ResumeLayout(false);
 
         }
@@ -316,5 +330,6 @@
         public System.Windows.Forms.Panel explorePanel;
         public System.Windows.Forms.ProgressBar progressBar;
         public System.Windows.Forms.Button browseButton;
+        private System.Windows.Forms.Panel panel1;
     }
 }

@@ -1,5 +1,5 @@
 ﻿using System;
-
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,13 +13,56 @@ namespace DepCharter
 {
     public partial class CharterForm : Form
     {
-
-
-      public CharterForm()
+        public CharterForm()
         {
           InitializeComponent();
           nwImageViewer1.Invalidated += new InvalidateEventHandler(updateStatus);
           ResumeLayout(false);
+          this.solutionTree.NodeMouseClick += new TreeNodeMouseClickEventHandler(nodeClick);
+          this.KeyPreview = true;
+          this.KeyDown += new KeyEventHandler(keyDown);
+        }
+
+        private void keyDown(object sender, KeyEventArgs e)
+        {
+          if (e.KeyCode == Keys.N)
+          {
+              // go to next sln
+            TreeNode node = solutionTree.SelectedNode;
+            if (node != null)
+            {
+              while (node != null)
+              {
+                node = node.NextNode;
+                if (node != null && node.Text.ToLower().EndsWith(".sln"))
+                {
+                  node.ExpandAll();
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        private void nodeClick(object sender, TreeNodeMouseClickEventArgs e)
+        {
+          string fullPath = e.Node.FullPath;
+          if (fullPath.ToLower().EndsWith(".sln"))
+          {
+            Solution sol = new Solution(fullPath);
+            string tempfile = "temp.dot";
+            string retempfile = "retemp.dot";
+            DotWriter dotWriter = new DotWriter(tempfile);
+            sol.writeDepsInDotCodeForSolution(dotWriter.dotFile);
+            dotWriter.Close();
+            DotWriter.reduceDotfile(tempfile, retempfile);
+
+            string pngtemp = "temp.png";
+            DotWriter.createPngFromDot(retempfile, pngtemp);
+            this.nwImageViewer1.LoadImage(pngtemp);
+            this.nwImageViewer1.Invalidate();
+          }
+          
         }
 
         private void updateStatus(object sender, EventArgs e)
