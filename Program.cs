@@ -246,7 +246,13 @@ namespace DepCharter
 
         foreach (string selectedProject in aCharterForm.projectsBox.SelectedItems)
         {
-          solution.projectsByName[selectedProject].ignore = false;
+          foreach (Project project in solution.projects.Values)
+          {
+            if (project.name.Equals(selectedProject))
+            {
+              project.ignore = false;
+            }
+          }
         }
         
       }

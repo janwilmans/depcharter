@@ -77,7 +77,7 @@
           // 
           this.btGenerate.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
           this.btGenerate.DialogResult = System.Windows.Forms.DialogResult.OK;
-          this.btGenerate.Image = global::depcharter.Properties.Resources.chart_organisation;
+          //this.btGenerate.Image = global::depcharter.Properties.Resources.chart_organisation; //vs2005 problem
           this.btGenerate.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
           this.btGenerate.Location = new System.Drawing.Point(19, 243);
           this.btGenerate.Name = "btGenerate";
