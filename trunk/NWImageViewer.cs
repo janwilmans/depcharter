@@ -12,9 +12,32 @@ namespace depcharter
 {
   public partial class NWImageViewerBase : System.Windows.Forms.UserControl
   {
+    /*
+    // C# 3.0 syntax
     public Image Image { get; set; }
     public TextureBrush Brush { get; set; }
     public ImageViewport ImageViewport { get; set; }
+    */
+    public Image Image { 
+      get { return image; } 
+      set { image = value; }      
+    }
+
+    public TextureBrush Brush {
+      get { return textureBrush; }
+      set { textureBrush = value; }
+    }
+
+    public ImageViewport ImageViewport
+    {
+      get { return imageViewport; }
+      set { imageViewport = value; }
+    }
+
+    Image image;
+    TextureBrush textureBrush;
+    ImageViewport imageViewport;
+
   }
 
   public partial class NWImageViewer : NWImageViewerBase

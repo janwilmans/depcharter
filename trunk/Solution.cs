@@ -10,7 +10,6 @@ namespace DepCharter
   class Solution
   {
     public ProjectDictionary projects = new ProjectDictionary();
-    public ProjectDictionary projectsByName = new ProjectDictionary();
 
     void Add(Project project)
     {
@@ -21,7 +20,6 @@ namespace DepCharter
       else
       {
         projects.Add(project.id, project);
-        projectsByName.Add(project.name, project);
       }
     }
 
