@@ -83,12 +83,12 @@ namespace DepCharter
           break;
       }
 
-      String objectString = String.Format("{0} [shape=box,style=filled,color={1}];", this.name, color);
+      String objectString = String.Format("\"{0}\" [shape=box,style=filled,color={1}];", this.name, color);
       writer.WriteLine(objectString);
       foreach (Project depProject in this.dependencies)
       {
         if (depProject.ignore) continue;
-        writer.WriteLine(this.name + " -> " + depProject.name);
+        writer.WriteLine("\"" + this.name + "\" -> \"" + depProject.name + "\"");
       }
     }
 
