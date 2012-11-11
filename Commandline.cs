@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace DepCharter
 {
-  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config }
+  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config, userProperties }
 
   class Settings
   {
@@ -24,6 +24,7 @@ namespace DepCharter
       optionList.Add(new Option("/h", Parser.hide, "  /h  : hide console window"));
       optionList.Add(new Option("/c", Parser.config, "  /c  : show config window"));
       optionList.Add(new Option("/v", Parser.verbose, "  /v  : be verbose"));
+      optionList.Add(new Option("/u", Parser.userProperties, "  /u  : read UserProperties from Project files to establish relationships"));
     }
 
     public static void ProcessOption(Parser action, string arg)
@@ -68,6 +69,9 @@ namespace DepCharter
           {
             Settings.aspectratio = 0.0;
           }
+          break;
+        case Parser.userProperties:
+            Settings.userProperties = true;
           break;
         default:
           // we are done process this option's arguments
@@ -126,6 +130,7 @@ namespace DepCharter
     public static bool hide;
     public static bool configwindow;
     public static double aspectratio = 0.7;     // fill the page by default
+    public static bool userProperties;
 
     public static Parser parserAction;
     public static Parser nextAction;

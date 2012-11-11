@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Solution.cs read Visual Studio Solution (.sln) files, these are plain-text files in a undocumented line-based format.
+
+using System;
 using System.IO;
 using System.Collections; // ArrayList
 using System.Collections.Generic; // Dictionary <>
@@ -23,6 +25,7 @@ namespace DepCharter
       }
     }
 
+    // no error handle here, assume the file exists is checked.
     public Solution(string aFullname)
     {
       fullname = aFullname.Trim();
@@ -36,21 +39,24 @@ namespace DepCharter
         line = line.Trim();
         if (line.StartsWith("Project"))
         {
-          Project project = new Project(this, reader, line);
+          Project project = new Project(this, line);
+          project.readDependencies(reader);
           this.Add(project);
         }
       }
 
-      // collect info from vcpro? files
+      // collect info from project xml files
       foreach (Project project in projects.Values)
       {
         project.readProjectFile();
       }
     }
-
+    
     public void resolveIds()
     {
-      foreach (Project project in projects.Values)
+      // copy the list before iterating, resolveIds may add dummy-projects in the process
+      ArrayList projectList = new ArrayList(projects.Values);
+      foreach (Project project in projectList)
       {
         project.resolveIds();
       }
@@ -131,6 +137,27 @@ namespace DepCharter
         }
         return depCount;
       }
+    }
+
+    public Project findProject(string name)
+    {
+      foreach (Project project in projects.Values)
+      {
+        //todo: match this more accurately, now 'foo' will match 'tem.foo' and/or 'bar.foo'
+        if (name.ToLower().EndsWith(project.name.ToLower()) || project.name.ToLower().EndsWith(name.ToLower()))
+        {
+          return project;
+        }
+      
+      }
+      return null;  
+    }
+
+    public Project createDummyProject(string name)
+    {
+        Project dummyProject = Project.createDummyProject(this, name);
+        Add(dummyProject);
+        return dummyProject;
     }
 
     public string name;

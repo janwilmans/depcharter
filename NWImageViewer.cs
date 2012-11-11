@@ -52,7 +52,7 @@ namespace depcharter
       ImageViewport = new ImageViewport();
       ImageViewport.DrawingAreaSize = this.Size;
 
-      LoadImage("large.png");
+      //LoadImage("large.png");
 
       this.MouseDown += new MouseEventHandler(this.MouseDown_event);
       this.MouseUp += new MouseEventHandler(this.event_MouseUp);
