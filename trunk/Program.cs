@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Program.cs contains the Main() and DOT generation helper methods
+
+using System;
 using System.Threading;
 using System.IO;
 using System.Collections;

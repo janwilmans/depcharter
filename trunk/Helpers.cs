@@ -2,11 +2,13 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml;
+using System.Xml.XPath;
 
 namespace DepCharter
 {
-  class SolutionParticle
-  {
+    class SolutionParticle
+    {
     public SolutionParticle(string content)
     {
       char[] charSeparators = { '"', '(', ')' };
@@ -22,10 +24,10 @@ namespace DepCharter
       }
     }
     public ArrayList values = new ArrayList();
-  }
+    }
 
-  class SolutionLine
-  {
+    class SolutionLine
+    {
     public SolutionLine(string line)
     {
       char[] charSeparators = { ',' };
@@ -45,12 +47,12 @@ namespace DepCharter
     }
 
     public ArrayList particles = new ArrayList();
-  }
+    }
 
-  class ProjectDictionary : Dictionary<string, Project> { }
+    class ProjectDictionary : Dictionary<string, Project> { }
 
-  class MyStringReader : StringReader
-  {
+    class MyStringReader : StringReader
+    {
     public MyStringReader(string input) : base(input) { }
 
     static int linenumber = 1;
@@ -62,4 +64,60 @@ namespace DepCharter
       return line;
     }
   }
+
+  class XmlContext : XmlDocument
+  {
+    public XmlContext()
+      : base()
+    {
+    }
+
+    public void SetNamespace(string prefix, string uri)
+    {
+        NamespaceManager = new XmlNamespaceManager(this.NameTable);
+        NamespaceManager.AddNamespace(prefix, uri);
+    }
+
+    // mask the normal SelectNode method and replace it 
+    // with one the incorporates a pre-set namespace
+    public XmlNodeList GetNodes(string xpath)         
+    {
+        XmlNodeList result = null;
+        if (NamespaceManager == null)
+        {
+            result = base.SelectNodes(xpath);
+        }
+        else
+        {
+            result = base.SelectNodes(xpath, NamespaceManager);
+        }
+        return result;
+    }
+
+    public string GetNodeContent(string xpath, string defaultvalue)         
+    {
+        string result = defaultvalue;
+        XmlNodeList list = GetNodes(xpath);
+        if (list.Count > 0)
+        {
+            result = list[0].InnerXml;
+        }        
+        return result;            
+    }
+
+    public string GetNodeContent(XmlElement list, string nodename, string defaultvalue)
+    {
+      string result = defaultvalue;
+      XmlNode node = list[nodename];
+      if (node != null)
+      {
+        result = node.InnerText;
+      }
+      return result;
+    }
+
+    public XmlNamespaceManager NamespaceManager;
+  }         
+
+  class StringMap : Dictionary<string, string> { }
 }
