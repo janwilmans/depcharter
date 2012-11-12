@@ -104,6 +104,8 @@ namespace DepCharter
       proc.Start();
     }
 
+    public delegate void Action();
+
     public static void PopulateSolutionTree(CharterForm control, string searchDir, string searchMask)
     {
       TreeNode rootNode = null;
