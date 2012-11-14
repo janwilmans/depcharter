@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("depcharter")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Assembléon")]
+[assembly: AssemblyCompany("Myquest")]
 [assembly: AssemblyProduct("depcharter")]
-[assembly: AssemblyCopyright("Copyright © Assembléon 2009")]
+[assembly: AssemblyCopyright("Copyright © Myquest 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

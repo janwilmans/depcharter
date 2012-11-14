@@ -20,13 +20,12 @@ namespace DepCharter
 
     public DotWriter(string filename)
     {
-      string dotFileName = Settings.workdir + filename;
-      if (File.Exists(dotFileName))
+      if (File.Exists(filename))
       {
-        File.Delete(dotFileName);
+        File.Delete(filename);
       }
-      dotFile = File.CreateText(dotFileName);
-      Console.WriteLine("Created " + dotFileName);
+      dotFile = File.CreateText(filename);
+      Console.WriteLine("Created " + filename);
       dotFile.WriteLine("digraph G {");   // the first line for the .dot file
     }
 
@@ -64,7 +63,7 @@ namespace DepCharter
     static public void reduceDotfile(string inputname, string outputname)
     {
       System.Diagnostics.Process tredProc = new System.Diagnostics.Process();
-      Console.WriteLine("Using tred to create reduced {0}", inputname);
+      Console.WriteLine("Using tred to create reduced dot file {0}", outputname);
       tredProc.StartInfo.FileName = "tred.exe";
       tredProc.StartInfo.Arguments = inputname;
       tredProc.StartInfo.UseShellExecute = false;
@@ -188,9 +187,26 @@ namespace DepCharter
 
     static void Execute()
     {
-      Solution solution = new Solution(Settings.input);
-      solution.resolveIds();
-      solution.markIgnoredProjects();
+      Solution solution;
+      if (Settings.input.ToLower().EndsWith(".sln"))
+      {
+        solution = new Solution();
+        solution.read(Settings.input);
+        solution.resolveIds();
+        solution.markIgnoredProjects();
+      }
+      else
+      {
+        solution = new Solution(); 
+        solution.readProject(Settings.input);
+        solution.resolveIds();    // todo: separate resolving Id's from recursively finding projects
+        solution.resolveIds();
+        solution.resolveIds();
+        solution.resolveIds();
+        solution.resolveIds();
+        solution.resolveIds();
+        solution.markIgnoredProjects();
+      }
 
       Console.WriteLine("Found " + solution.projects.Values.Count + " projects");
       int deps = solution.DepCount;
@@ -280,7 +296,7 @@ namespace DepCharter
         }
       }
 
-      string dotFileName = "dep.txt";
+      string dotFileName = Settings.workdir + "dep.txt";
       DotWriter dotWriter = new DotWriter(dotFileName);
       dotWriter.WriteAspectRatio(Settings.aspectratio);
 
@@ -308,7 +324,7 @@ namespace DepCharter
       
       if (Settings.reduce)
       {
-        string redepFile = "redep.txt";
+        string redepFile = Settings.workdir + "redep.txt";
         DotWriter.reduceDotfile(dotFileName, redepFile);
         dotFileName = redepFile;
         pngFile = repngFile;
