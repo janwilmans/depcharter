@@ -28,12 +28,12 @@ namespace DepCharter
       SolutionLine solutionLine = new SolutionLine(firstLine);
       this.id = solutionLine[2][1].ToLower();       // store in lower-case, _must_ be treated case-insensitive
       this.name = solutionLine[0][3];
-      this.filename = solutionLine[1][1];
+      this.filename = Path.GetFullPath(Path.GetDirectoryName(solution.fullname) + @"\" + solutionLine[1][1]);
 
       if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
     }
 
-    Project(Solution aSolution)
+    public Project(Solution aSolution)
     {
       solution = aSolution;
     }
@@ -164,7 +164,9 @@ namespace DepCharter
             Project dependentProject = solution.findProject(projectName);
             if (dependentProject == null)
             {
-              dependentProject = solution.createDummyProject(projectName);
+              string projectdir = Path.GetDirectoryName(filename);
+              string cocabasedir = Path.GetFullPath(projectdir + @"\..\..\..") + @"\";
+              dependentProject = solution.createCoCaProject(cocabasedir, projectName);
             }
             dependencies.Add(dependentProject);
             dependentProject.users.Add(this);
@@ -234,11 +236,11 @@ namespace DepCharter
         if (!string.IsNullOrEmpty(projectGuid))
         {
             Console.WriteLine("GUID: " + id + " S: " + projectGuid);
-            if (id != "" && !id.Equals(projectGuid))
+            if ((!string.IsNullOrEmpty(id)) && !id.Equals(projectGuid))
             {
                 Console.WriteLine("Project's guid (" + projectGuid + ") not equal to solution's project-guid (" + id + "), we assue the project is right about it's own guid");
-                id = projectGuid;
             }
+            id = projectGuid;
         }
 
         // first try to read .vcxproj -style
@@ -456,5 +458,6 @@ namespace DepCharter
     public string id;
     public bool ignore;
     Solution solution;
+    
   }
 }

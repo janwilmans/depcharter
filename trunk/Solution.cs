@@ -25,10 +25,14 @@ namespace DepCharter
       }
     }
 
-    // no error handle here, assume the file exists is checked.
-    public Solution(string aFullname)
+    public Solution()
     {
-      fullname = aFullname.Trim();
+    }
+
+    // no error handle here, assume the file exists is checked.
+    public void read(string aFullname)
+    {
+      fullname = Path.GetFullPath(aFullname.Trim());
       name = Path.GetFileNameWithoutExtension(fullname);
       StringReader reader = new MyStringReader(File.ReadAllText(fullname));
 
@@ -50,6 +54,56 @@ namespace DepCharter
       {
         project.readProjectFile();
       }
+    }
+    
+    // a CoCa project name looks like "subdirname.projectname" 
+    // for example 'tem.mdlsmc', it means a project 'basedir\tem\mdlsmc.vcxproj' OR 'basedir\tem\mdlsmc.csproj' exists
+    public Project createCoCaProject(string basedir, string CoCaProjectName)
+    {
+      Project result;
+      string projectname = CoCaProjectName.Substring(CoCaProjectName.LastIndexOf(".")+1);
+      string basename = basedir + CoCaProjectName.Trim().Replace(".", @"\") + @"\src\";
+      string fullname = basename + projectname + ".csproj";
+
+      if (!File.Exists(fullname))
+      {
+        fullname = basename + projectname + ".vcxproj";
+      }
+      if (File.Exists(fullname))
+      {
+        result = readProject(fullname);
+      }
+      else
+      {
+        Console.WriteLine("Project: " + CoCaProjectName + " not found at base direcory: " + basedir + "!");
+        result = createDummyProject(CoCaProjectName);
+      }
+      return result;
+    }
+
+    string getCocaProjectName(string aFullname)
+    {
+      string projectname = Path.GetFileNameWithoutExtension(fullname);
+      string basedir = Path.GetFullPath(Path.GetDirectoryName(fullname) + @"\..");
+      string projectdir = basedir.Substring(0, basedir.LastIndexOf(@"\"));
+      string componentname = projectdir.Substring(projectdir.LastIndexOf(@"\") + 1);
+      return componentname + "." + projectname;
+    }
+
+    public Project readProject(string aFullname)
+    {
+      Project result;
+      fullname = aFullname.Trim();
+      // name = Path.GetFileNameWithoutExtension(fullname);
+      name = getCocaProjectName(fullname);
+      StringReader reader = new MyStringReader(File.ReadAllText(fullname));
+
+      result = new Project(this);
+      result.name = name;
+      result.filename = fullname;
+      result.readProjectFile();
+      this.Add(result);
+      return result;
     }
     
     public void resolveIds()

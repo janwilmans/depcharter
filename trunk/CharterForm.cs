@@ -48,7 +48,8 @@ namespace DepCharter
           string fullPath = e.Node.FullPath;
           if (fullPath.ToLower().EndsWith(".sln"))
           {
-            Solution sol = new Solution(fullPath);
+            Solution sol = new Solution();
+            sol.read(fullPath);
             string tempfile = "temp.dot";
             string retempfile = "retemp.dot";
             DotWriter dotWriter = new DotWriter(tempfile);
