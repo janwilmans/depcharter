@@ -140,6 +140,25 @@ namespace DepCharter
 
     }
 
+    public void recursivelyAddAllProjects()
+    {
+      if (this.userProperties.ContainsKey("ProjectUses"))
+      {
+        string[] list = userProperties["ProjectUses"].Split(';');
+        foreach (string projectName in list)
+        {
+          Project project = solution.findProject(projectName);
+          if (project == null)
+          {
+            string projectdir = Path.GetDirectoryName(filename);
+            string cocabasedir = Path.GetFullPath(projectdir + @"\..\..\..") + @"\";
+            project = solution.createCoCaProject(cocabasedir, projectName);
+            project.recursivelyAddAllProjects();
+          }
+        }
+      }
+    }
+
     public void resolveIds()
     {
       if (!Settings.userProperties)
@@ -164,9 +183,7 @@ namespace DepCharter
             Project dependentProject = solution.findProject(projectName);
             if (dependentProject == null)
             {
-              string projectdir = Path.GetDirectoryName(filename);
-              string cocabasedir = Path.GetFullPath(projectdir + @"\..\..\..") + @"\";
-              dependentProject = solution.createCoCaProject(cocabasedir, projectName);
+              dependentProject = solution.createDummyProject(projectName);
             }
             dependencies.Add(dependentProject);
             dependentProject.users.Add(this);
@@ -458,6 +475,6 @@ namespace DepCharter
     public string id;
     public bool ignore;
     Solution solution;
-    
+
   }
 }
