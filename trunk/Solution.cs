@@ -112,6 +112,12 @@ namespace DepCharter
       ArrayList projectList = new ArrayList(projects.Values);
       foreach (Project project in projectList)
       {
+        project.recursivelyAddAllProjects();
+      }
+
+      projectList = new ArrayList(projects.Values);
+      foreach (Project project in projectList)
+      {
         project.resolveIds();
       }
     }

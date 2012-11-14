@@ -199,11 +199,6 @@ namespace DepCharter
       {
         solution = new Solution(); 
         solution.readProject(Settings.input);
-        solution.resolveIds();    // todo: separate resolving Id's from recursively finding projects
-        solution.resolveIds();
-        solution.resolveIds();
-        solution.resolveIds();
-        solution.resolveIds();
         solution.resolveIds();
         solution.markIgnoredProjects();
       }
