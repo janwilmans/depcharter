@@ -79,7 +79,7 @@ namespace DepCharter
       <TR><TD bgcolor=""olivedrab1"">utility</TD></TR>
       <TR><TD bgcolor=""lightblue"">dll</TD></TR>
       <TR><TD bgcolor=""lightgray"">static</TD></TR>
-      <TR><TD bgcolor=""red"">not found</TD></TR>
+      <TR><TD bgcolor=""white"">not found</TD></TR>
       </TABLE>>];";
         dotFile.WriteLine(legend);
     }
@@ -428,6 +428,9 @@ namespace DepCharter
   }
 }
 
-//todo: CoCa projects are not always found, maybe the project-base directory is not correctly determined?
+// dependency: 'installations.TitanUtilities', installations\TitanUtilities\Utilities.csproj exists.
 //todo: appearently a CoCa 'uses'-reference refers to a directory and not to a VS-project name (should we use the first or ALL projects we find in a directory?)
+
+//todo: CoCa projects are not always found, maybe the project-base directory is not correctly determined?
 //todo: implement 'searchDirs' options to search for related projects even if they are not found by following the CoCa uses-relations.
+// how to interpret 'AUTOLOADER' as dependency?? see BhvSpecimenExchangePS probably just an errornous dependency

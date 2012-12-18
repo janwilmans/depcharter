@@ -7,5 +7,5 @@ Windows Registry Editor Version 5.00
 [HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter\Command]
 @="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /r \"%1\""
 
-[HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter config\Command]
-@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /h /c /r \"%1\""
+;[HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter config\Command]
+;@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /h /c /r \"%1\""
