@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace DepCharter
 {
-  enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config, userProperties }
+    enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config, userProperties, searchDirs }
 
   class Settings
   {
@@ -25,6 +25,7 @@ namespace DepCharter
       optionList.Add(new Option("/c", Parser.config, "  /c  : show config window"));
       optionList.Add(new Option("/v", Parser.verbose, "  /v  : be verbose"));
       optionList.Add(new Option("/u", Parser.userProperties, "  /u  : read UserProperties from Project files to establish relationships"));
+      //optionList.Add(new Option("/sd", Parser.searchDirs, "  /sd : search directories to find related projects"));
     }
 
     public static void ProcessOption(Parser action, string arg)
