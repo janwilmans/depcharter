@@ -12,6 +12,14 @@ using System.Runtime.InteropServices;
 using System.Xml;
 using System.Xml.XPath;
 
+/*  // optimize for circulair diagram:
+ *  digraph G {
+ *  aspect="1.3";
+ *  layout="twopi";
+ *  ranksep="3.0";
+ *  overlap="vpsc";
+ */
+
 namespace DepCharter
 {
   class DotWriter
@@ -59,6 +67,22 @@ namespace DepCharter
         dotFile.WriteLine("node [fontsize=" + fontSize + "]");
       }
     }
+    
+    public void WriteLegend()
+    {
+      string legend = @"
+      ""Legend""
+      [shape=none]
+      [label=<<TABLE border=""0"" cellborder=""1"" CELLSPACING=""0"">
+      <TR><TD><b>Legend</b></TD></TR>
+      <TR><TD bgcolor=""orange"">application</TD></TR>
+      <TR><TD bgcolor=""olivedrab1"">utility</TD></TR>
+      <TR><TD bgcolor=""lightblue"">dll</TD></TR>
+      <TR><TD bgcolor=""lightgray"">static</TD></TR>
+      <TR><TD bgcolor=""red"">not found</TD></TR>
+      </TABLE>>];";
+        dotFile.WriteLine(legend);
+    }
 
     static public void reduceDotfile(string inputname, string outputname)
     {
@@ -68,14 +92,22 @@ namespace DepCharter
       tredProc.StartInfo.Arguments = inputname;
       tredProc.StartInfo.UseShellExecute = false;
       tredProc.StartInfo.RedirectStandardOutput = true;
-      tredProc.Start();
-      string tredOutput = tredProc.StandardOutput.ReadToEnd();
-      tredProc.WaitForExit();
 
-      if (File.Exists(outputname)) File.Delete(outputname);
-      StreamWriter writer = new StreamWriter(outputname);
-      writer.Write(tredOutput);
-      writer.Close();
+      string tredOutput;
+      try
+      {
+          tredProc.Start();
+          tredOutput = tredProc.StandardOutput.ReadToEnd();
+          tredProc.WaitForExit();
+          if (File.Exists(outputname)) File.Delete(outputname);
+          StreamWriter writer = new StreamWriter(outputname);
+          writer.Write(tredOutput);
+          writer.Close();
+      } 
+        catch (Exception)
+      {
+          MessageBox.Show("Error during TRED execution (is Graphviz installed?)", Application.ProductName);
+      }
     }
 
     static public void createPngFromDot(string dotInputname, string pngOutputname)
@@ -85,8 +117,15 @@ namespace DepCharter
       proc.StartInfo.FileName = "dot.exe";
       proc.StartInfo.Arguments = " -Tpng " + dotInputname + " -o " + pngOutputname;
       proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-      proc.Start();
-      proc.WaitForExit();
+      try
+      {
+          proc.Start();
+          proc.WaitForExit();
+      } 
+        catch (Exception)
+      {
+          MessageBox.Show("Error during DOT execution (is Graphviz installed?)", Application.ProductName);
+      }
     }
 
   }
@@ -100,7 +139,14 @@ namespace DepCharter
       proc.StartInfo.FileName = filename;
       proc.StartInfo.Arguments = args;
       proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-      proc.Start();
+      try
+      {
+          proc.Start();
+      }
+      catch (Exception)
+      {
+          MessageBox.Show(string.Format("Error starting: {0} {1}", proc.StartInfo.FileName, proc.StartInfo.Arguments), Application.ProductName);
+      }
     }
 
     public delegate void Action();
@@ -301,6 +347,8 @@ namespace DepCharter
       }
 
       dotWriter.WriteFontSize(Settings.fontsize);
+      dotWriter.WriteLegend();
+      
              
       //dotFile.WriteLine("ranksep=1.5");
       //dotFile.WriteLine("edge [style=\"setlinewidth(4)\"]");
@@ -370,7 +418,7 @@ namespace DepCharter
         }
 
         // display usage help
-        Console.WriteLine("DepCharter " + optionString+ "<filename.sln>\n");
+        Console.WriteLine("DepCharter " + optionString + "<filename.sln>\n");
         foreach (Option option in Settings.optionList)
         {
           Console.WriteLine(option.description);
@@ -379,3 +427,7 @@ namespace DepCharter
     }
   }
 }
+
+//todo: CoCa projects are not always found, maybe the project-base directory is not correctly determined?
+//todo: appearently a CoCa 'uses'-reference refers to a directory and not to a VS-project name (should we use the first or ALL projects we find in a directory?)
+//todo: implement 'searchDirs' options to search for related projects even if they are not found by following the CoCa uses-relations.

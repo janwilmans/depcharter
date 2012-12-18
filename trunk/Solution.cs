@@ -60,25 +60,25 @@ namespace DepCharter
     // for example 'tem.mdlsmc', it means a project 'basedir\tem\mdlsmc.vcxproj' OR 'basedir\tem\mdlsmc.csproj' exists
     public Project createCoCaProject(string basedir, string CoCaProjectName)
     {
-      Project result;
-      string projectname = CoCaProjectName.Substring(CoCaProjectName.LastIndexOf(".")+1);
-      string basename = basedir + CoCaProjectName.Trim().Replace(".", @"\") + @"\src\";
-      string fullname = basename + projectname + ".csproj";
+        Project result;
+        string projectname = CoCaProjectName.Substring(CoCaProjectName.LastIndexOf(".")+1);
+        string basename = basedir + CoCaProjectName.Trim().Replace(".", @"\") + @"\src\";
+        string fullname = basename + projectname + ".csproj";
 
-      if (!File.Exists(fullname))
-      {
-        fullname = basename + projectname + ".vcxproj";
-      }
-      if (File.Exists(fullname))
-      {
-        result = readProject(fullname);
-      }
-      else
-      {
-        Console.WriteLine("Project: " + CoCaProjectName + " not found at base direcory: " + basedir + "!");
-        result = createDummyProject(CoCaProjectName);
-      }
-      return result;
+        if (!File.Exists(fullname))
+        {
+            fullname = basename + projectname + ".vcxproj";
+        }
+        if (File.Exists(fullname))
+        {
+            result = readProject(fullname);
+        }
+        else
+        {
+            Console.WriteLine("Project: " + CoCaProjectName + " not found at base direcory: " + basedir + "!");
+            result = createDummyProject(CoCaProjectName);
+        }
+        return result;
     }
 
     string getCocaProjectName(string aFullname)
@@ -94,9 +94,12 @@ namespace DepCharter
     {
       Project result;
       fullname = aFullname.Trim();
-      // name = Path.GetFileNameWithoutExtension(fullname);
-      name = getCocaProjectName(fullname);
-      StringReader reader = new MyStringReader(File.ReadAllText(fullname));
+      string name = getCocaProjectName(fullname);
+
+      if (string.IsNullOrEmpty(this.name))
+      {
+          this.name = name;
+      }
 
       result = new Project(this);
       result.name = name;
@@ -110,6 +113,7 @@ namespace DepCharter
     {
       // copy the list before iterating, resolveIds may add dummy-projects in the process
       ArrayList projectList = new ArrayList(projects.Values);
+      
       foreach (Project project in projectList)
       {
         project.recursivelyAddAllProjects();

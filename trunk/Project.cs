@@ -9,7 +9,7 @@ using System.Xml.XPath;
 
 namespace DepCharter
 {
-
+  // values correspond to actual data in vcproj files
   enum ConfigurationType
   {
       Makefile = 0, 
@@ -24,18 +24,19 @@ namespace DepCharter
   {
     public Project(Solution aSolution, string firstLine)
     {
-      solution = aSolution;
-      SolutionLine solutionLine = new SolutionLine(firstLine);
-      this.id = solutionLine[2][1].ToLower();       // store in lower-case, _must_ be treated case-insensitive
-      this.name = solutionLine[0][3];
-      this.filename = Path.GetFullPath(Path.GetDirectoryName(solution.fullname) + @"\" + solutionLine[1][1]);
-
-      if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
+        outputType = ConfigurationType.Unexpected;
+        solution = aSolution;
+        SolutionLine solutionLine = new SolutionLine(firstLine);
+        this.id = solutionLine[2][1].ToLower();       // store in lower-case, _must_ be treated case-insensitive
+        this.name = solutionLine[0][3];
+        this.filename = Path.GetFullPath(Path.GetDirectoryName(solution.fullname) + @"\" + solutionLine[1][1]);
+        if (Settings.verbose) Console.WriteLine("project: " + this.name + " " + this.id);
     }
 
     public Project(Solution aSolution)
     {
-      solution = aSolution;
+        outputType = ConfigurationType.Unexpected;
+        solution = aSolution;
     }
 
     static public Project createDummyProject(Solution solution, string name)
@@ -100,17 +101,25 @@ namespace DepCharter
     public void writeDepsInDotCode(StreamWriter writer)
     {
       if (this.ignore) return;
-      String color = "olivedrab1";
+      String color = "red";
       switch (outputType)
       {
         case ConfigurationType.Application:
-          color = "red";
+          color = "orange";
           break;
         case ConfigurationType.DynamicLibrary:
           color = "lightblue";
           break;
         case ConfigurationType.StaticLibrary:
           color = "lightgray";
+          break;
+        case ConfigurationType.Makefile:
+        case ConfigurationType.Utility:
+          color = "olivedrab1";
+          break;
+        default:
+           // unknown type or missing
+           color = "red";
           break;
       }
 
@@ -122,74 +131,62 @@ namespace DepCharter
         if (depProject.ignore) continue;
         writer.WriteLine("\"" + this.name + "\" -> \"" + depProject.name + "\"");
       }
-
-      /*
-      /// THIS IS TEST-ONLY CODE, the projects should be created already, before writeDepsInDotCode() is called
-      // write dependencies from FEI User Properties
-      if (this.userProperties.ContainsKey("ProjectUses"))
-      {
-          string[] list = userProperties["ProjectUses"].Split(';');
-          foreach (string projectName in list )
-          {
-            if (string.IsNullOrEmpty(projectName)) continue;
-            //if (depProject.ignore) continue;
-            writer.WriteLine("\"" + this.name + "\" -> \"" + projectName + "\"");
-          }      
-      }
-      */
-
     }
 
     public void recursivelyAddAllProjects()
     {
-      if (this.userProperties.ContainsKey("ProjectUses"))
-      {
-        string[] list = userProperties["ProjectUses"].Split(';');
+        if (!Settings.userProperties) return;
+        if (!this.userProperties.ContainsKey("ProjectUses")) return;
+
+        char[] charSeparators = { ';' };
+        string[] list = userProperties["ProjectUses"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
         foreach (string projectName in list)
         {
-          Project project = solution.findProject(projectName);
-          if (project == null)
-          {
-            string projectdir = Path.GetDirectoryName(filename);
-            string cocabasedir = Path.GetFullPath(projectdir + @"\..\..\..") + @"\";
-            project = solution.createCoCaProject(cocabasedir, projectName);
-            project.recursivelyAddAllProjects();
-          }
+            Project project = solution.findProject(projectName);
+            if (project == null)
+            {
+                string projectdir = Path.GetDirectoryName(filename);
+                string cocabasedir = Path.GetFullPath(projectdir + @"\..\..\..") + @"\";
+
+                Console.WriteLine("createCoCaProject: " + projectName + " (for " + this.name + ")");
+
+                project = solution.createCoCaProject(cocabasedir, projectName);
+                project.recursivelyAddAllProjects();
+            }
         }
-      }
     }
 
     public void resolveIds()
     {
-      if (!Settings.userProperties)
-      {
-        // resolve project-relationship from solution
-        foreach (string anId in dependencyIds)
+        if (!Settings.userProperties)
         {
-          //Console.WriteLine("resolve: " + anId);
-          Project dependentProject = solution.projects[anId];
-          dependencies.Add(dependentProject);
-          dependentProject.users.Add(this);
+            // resolve project-relationship from solution
+            foreach (string anId in dependencyIds)
+            {
+                //Console.WriteLine("resolve: " + anId);
+                Project dependentProject = solution.projects[anId];
+                dependencies.Add(dependentProject);
+                dependentProject.users.Add(this);
+            }
+            return;
         }
-      }
-      else
-      {
+
         // read relationships from FEI specific UserProperties
-        if (this.userProperties.ContainsKey("ProjectUses"))
+        if (!this.userProperties.ContainsKey("ProjectUses")) return;
+
+        char[] charSeparators = { ';' };
+        string[] list = userProperties["ProjectUses"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+        foreach (string projectName in list)
         {
-          string[] list = userProperties["ProjectUses"].Split(';');
-          foreach (string projectName in list)
-          {
+            if (string.IsNullOrEmpty(projectName)) continue;
             Project dependentProject = solution.findProject(projectName);
             if (dependentProject == null)
             {
-              dependentProject = solution.createDummyProject(projectName);
+                dependentProject = solution.createDummyProject(projectName);
             }
             dependencies.Add(dependentProject);
             dependentProject.users.Add(this);
-          }
         }
-      }    
     }
 
     public void readProjectFile()
@@ -252,7 +249,7 @@ namespace DepCharter
         string projectGuid = doc.GetNodeContent("//vs:PropertyGroup[@Label='Globals']/vs:ProjectGuid", "").ToLower();
         if (!string.IsNullOrEmpty(projectGuid))
         {
-            Console.WriteLine("GUID: " + id + " S: " + projectGuid);
+            //Console.WriteLine("GUID: " + id + " S: " + projectGuid);
             if ((!string.IsNullOrEmpty(id)) && !id.Equals(projectGuid))
             {
                 Console.WriteLine("Project's guid (" + projectGuid + ") not equal to solution's project-guid (" + id + "), we assue the project is right about it's own guid");
