@@ -18,6 +18,8 @@ namespace DepCharter
       StaticLibrary = 4,
       Utility = 10,
       Unexpected = -1,
+      Library = -2,     // C#
+      WinExe = -3,      // C#
   }
 
   class Project
@@ -100,14 +102,17 @@ namespace DepCharter
 
     public void writeDepsInDotCode(StreamWriter writer)
     {
+      string extraInfo = "";
       if (this.ignore) return;
-      String color = "red";
+      String color = "white";   // white so independend .sln files will look 'normal'
       switch (outputType)
       {
-        case ConfigurationType.Application:
-          color = "orange";
+          case ConfigurationType.Application:
+          case ConfigurationType.WinExe:
+              color = "orange";
           break;
-        case ConfigurationType.DynamicLibrary:
+          case ConfigurationType.DynamicLibrary:
+          case ConfigurationType.Library:
           color = "lightblue";
           break;
         case ConfigurationType.StaticLibrary:
@@ -119,11 +124,15 @@ namespace DepCharter
           break;
         default:
            // unknown type or missing
-           color = "red";
+           color = "white";
+           if (!string.IsNullOrEmpty(outputTypeName))
+           {
+               extraInfo = " (outputTypeName: '" + outputTypeName + "')";
+           }
           break;
       }
 
-      String objectString = String.Format("\"{0}\" [shape=box,style=filled,color={1}];", this.name, color);
+      String objectString = String.Format("\"{0}\" [shape=box,style=filled,fillcolor={1},color=black];", this.name + extraInfo, color);
       writer.WriteLine(objectString);
       
       foreach (Project depProject in this.dependencies)
@@ -221,6 +230,7 @@ namespace DepCharter
       {
         // its a C# project
         projectType = "C#";
+        informationCollected = true;
 
         XmlNodeList outputList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:OutputType");
         if (outputList.Count > 0)
@@ -236,6 +246,17 @@ namespace DepCharter
         if (rootNameSpaceList.Count > 0)
         {
           rootNamespace = rootNameSpaceList[0].FirstChild.Value;
+        }
+        XmlNodeList projectGuidList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:ProjectGuid");
+        if (projectGuidList.Count > 0)
+        {
+            string projectGuid = projectGuidList[0].FirstChild.Value.ToLower();
+            //Console.WriteLine("GUID: " + id + " S: " + projectGuid);
+            if ((!string.IsNullOrEmpty(id)) && !id.Equals(projectGuid))
+            {
+                Console.WriteLine("Project's guid (" + projectGuid + ") not equal to solution's project-guid (" + id + "), we assue the project is right about it's own guid");
+            }
+            id = projectGuid;
         }
       } // end C# part
       else if (projectFile.Name.EndsWith(".vcproj") || projectFile.Name.EndsWith(".vcxproj"))
@@ -273,7 +294,7 @@ namespace DepCharter
                 informationCollected = true;
             }
         }
-      } // end c++ part
+      } // end C++ part
 
 
       // FEI (2012) specific extention
@@ -306,10 +327,41 @@ namespace DepCharter
       }
       // FEI (2012) specific extention
 
-      if (!informationCollected)
+      if (informationCollected)
+      {
+          outputType = ConfigurationType.Unexpected;
+          if (outputTypeName.ToLower() == ConfigurationType.Makefile.ToString().ToLower())
+          {
+              outputType = ConfigurationType.Makefile;
+          }
+          else if (outputTypeName.ToLower() == ConfigurationType.Application.ToString().ToLower())
+          {
+              outputType = ConfigurationType.Application;
+          }
+          else if (outputTypeName.ToLower() == ConfigurationType.DynamicLibrary.ToString().ToLower())
+          {
+              outputType = ConfigurationType.DynamicLibrary;
+          }
+          else if (outputTypeName.ToLower() == ConfigurationType.Library.ToString().ToLower())  // C# libraries are never static
+          {
+              outputType = ConfigurationType.Library;
+          }
+          else if (outputTypeName.ToLower() == ConfigurationType.StaticLibrary.ToString().ToLower())
+          {
+              outputType = ConfigurationType.StaticLibrary;
+          }
+          else if (outputTypeName.ToLower() == ConfigurationType.Utility.ToString().ToLower())
+          {
+              outputType = ConfigurationType.Utility;
+          }
+          else if (outputTypeName.ToLower() == ConfigurationType.WinExe.ToString().ToLower())
+          {
+              outputType = ConfigurationType.WinExe;
+          }
+      }
+      else
       {
         projectType = "unknown";
-        outputTypeName = "unknown";
         outputName = projectFile.Name;
       }
     }
@@ -351,27 +403,6 @@ namespace DepCharter
         }
 
         outputTypeName = doc.GetNodeContent(configuration, "ConfigurationType", ConfigurationType.Unexpected.ToString());
-        outputType = ConfigurationType.Unexpected;
-        if (outputTypeName.ToLower() == ConfigurationType.Makefile.ToString().ToLower())
-        {
-            outputType = ConfigurationType.Makefile;
-        }
-        else if (outputTypeName.ToLower() == ConfigurationType.Application.ToString().ToLower())
-        {
-            outputType = ConfigurationType.Application;
-        }
-        else if (outputTypeName.ToLower() == ConfigurationType.DynamicLibrary.ToString().ToLower())
-        {
-            outputType = ConfigurationType.DynamicLibrary;
-        }
-        else if (outputTypeName.ToLower() == ConfigurationType.StaticLibrary.ToString().ToLower())
-        {
-            outputType = ConfigurationType.StaticLibrary;
-        }
-        else if (outputTypeName.ToLower() == ConfigurationType.Utility.ToString().ToLower())
-        {
-            outputType = ConfigurationType.Utility;
-        }
     }
 
     void ReadVCProjStyle(XmlNodeList configs)
@@ -412,38 +443,7 @@ namespace DepCharter
                 projectType = "C++/CLI";
             }
 
-            string configurationTypeString = configuration.GetAttribute("ConfigurationType");
-            int configurationType = Convert.ToInt32(configurationTypeString);
-            outputType = ConfigurationType.Unexpected;
-            switch (configurationType)
-            {
-                case (int)ConfigurationType.Makefile:
-                    outputType = ConfigurationType.Makefile;
-                    break;
-                case (int)ConfigurationType.Application:
-                    outputType = ConfigurationType.Application;
-                    break;
-                case (int)ConfigurationType.DynamicLibrary:
-                    outputType = ConfigurationType.DynamicLibrary;
-                    break;
-                case (int)ConfigurationType.StaticLibrary:
-                    outputType = ConfigurationType.StaticLibrary;
-                    break;
-                case (int)ConfigurationType.Utility:
-                    outputType = ConfigurationType.Utility;
-                    break;
-                default:
-                    outputTypeName = configurationTypeString;
-                    break;
-            }
-
-            if (outputType != ConfigurationType.Unexpected)
-            {
-                outputTypeName = outputType.ToString();
-            }
-
-            //String name = String.Format("{0}.{1}", this.name, outputTypeName);
-            //this.name = name;
+            outputTypeName = configuration.GetAttribute("ConfigurationType");
 
             // add GenerateDebugInformation
             Console.WriteLine("projectType: {0}", projectType);

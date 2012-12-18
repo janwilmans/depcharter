@@ -65,9 +65,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="CharterForm.resx">
       <DependentUpon>CharterForm.cs</DependentUpon>
     </EmbeddedResource>
