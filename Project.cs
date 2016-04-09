@@ -79,13 +79,13 @@ namespace DepCharter
                 }
                 if (line.StartsWith("EndProjectSection"))
                 {
-                    if (Settings.verbose) Console.WriteLine("EndProjectSection found.\n");
+                    if (Settings.verbose) Console.WriteLine("EndProjectSection\n");
                     break;
                 }
             }
             if (line.ToLower().Trim() == "endproject")
             {
-                if (Settings.verbose) Console.WriteLine("EndProject found.\n");
+                if (Settings.verbose) Console.WriteLine("EndProject\n");
                 break;
             }
         }
@@ -165,17 +165,21 @@ namespace DepCharter
         }
     }
 
+    public void AddDependentProjectById(string id)
+    {
+        Project dependentProject = solution.projects[id];
+        dependencies.Add(dependentProject);
+        dependentProject.users.Add(this);
+    }
+
     public void resolveIds()
     {
         if (!Settings.userProperties)
         {
             // resolve project-relationship from solution
-            foreach (string anId in dependencyIds)
+            foreach (string id in dependencyIds)
             {
-                //Console.WriteLine("resolve: " + anId);
-                Project dependentProject = solution.projects[anId];
-                dependencies.Add(dependentProject);
-                dependentProject.users.Add(this);
+                AddDependentProjectById(id);
             }
             return;
         }
@@ -195,6 +199,17 @@ namespace DepCharter
             }
             dependencies.Add(dependentProject);
             dependentProject.users.Add(this);
+        }
+    }
+
+    public void readProjectReferences(XmlContext doc)
+    {
+        var projectReferences = doc.GetNodes("//vs:ItemGroup/vs:ProjectReference/vs:Project");
+        foreach (XmlElement projectId in projectReferences)
+        {
+            string id = projectId.InnerText;
+            if (Settings.verbose) Console.WriteLine("         Reference: " + id);
+            AddDependentProjectById(id);
         }
     }
 
@@ -279,15 +294,16 @@ namespace DepCharter
         }
 
         // first try to read .vcxproj -style
-        XmlNodeList configurations = doc.GetNodes("//vs:PropertyGroup[@Label='Configuration']");
+        var configurations = doc.GetNodes("//vs:PropertyGroup[@Label='Configuration']");
         if (configurations.Count > 0)
         {
             ReadVCXProjStyle(doc, configurations);
             informationCollected = true;
+            readProjectReferences(doc);
         }
         else
         {
-            XmlNodeList configs = doc.GetNodes("/vs:VisualStudioProject/vs:Configurations/vs:Configuration");
+            var configs = doc.GetNodes("/vs:VisualStudioProject/vs:Configurations/vs:Configuration");
             if (configs.Count > 0)
             {
                 ReadVCProjStyle(configs); // before vs2010 the project xml layout was different.
@@ -298,27 +314,27 @@ namespace DepCharter
 
 
       // FEI (2012) specific extention
-      XmlNodeList depsList = doc.GetNodes("//vs:ProjectExtensions/vs:VisualStudio/vs:UserProperties");
+      var depsList = doc.GetNodes("//vs:ProjectExtensions/vs:VisualStudio/vs:UserProperties");
       if (depsList.Count > 0)
       {
         foreach (XmlAttribute a in depsList[0].Attributes)
         {
           if (userProperties.ContainsKey(a.Name))
           {
-            if (Settings.verbose) Console.WriteLine("FEI UserProperties contains duplicated attibute '" + a.Name + " (ignored)");
+            //if (Settings.verbose) Console.WriteLine("FEI UserProperties contains duplicated attibute '" + a.Name + " (ignored)");
             continue;
           }
           if (!a.Value.Contains(";"))
           {
-            if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]: " + a.Value);
+            //if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]: " + a.Value);
           }
           else
           {
             // assume it is a ; separated list.
-            if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]:");
+            //if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]:");
             foreach (string attr in a.Value.Split(';'))
             {
-              if (Settings.verbose) Console.WriteLine("  " + attr);
+              //if (Settings.verbose) Console.WriteLine("  " + attr);
             }
           }
 

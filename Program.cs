@@ -249,9 +249,8 @@ namespace DepCharter
         solution.markIgnoredProjects();
       }
 
-      Console.WriteLine("Found " + solution.projects.Values.Count + " projects");
       int deps = solution.DepCount;
-      Console.WriteLine("Found " + deps + " dependencies");
+      Console.WriteLine("Found " + solution.projects.Values.Count + " projects with " + deps + " relationships");
 
       if (Settings.configwindow)
       {

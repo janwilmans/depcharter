@@ -59,7 +59,7 @@ namespace DepCharter
     public override string ReadLine()
     {
       string line = base.ReadLine();
-      if (Settings.verbose) Console.WriteLine(linenumber + ": " + line);
+      //if (Settings.verbose) Console.WriteLine(linenumber + ": " + line);
       linenumber++;
       return line;
     }
