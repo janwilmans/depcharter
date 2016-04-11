@@ -132,7 +132,7 @@ namespace DepCharter
 
     class Program
     {
-        static public BuildModel model;
+        static public BuildModel Model;
 
         static public void shellExecute(string filename, string args)
         {
@@ -234,7 +234,7 @@ namespace DepCharter
 
         static void Execute()
         {
-            Program.model = new BuildModel();
+            Program.Model = new BuildModel();
 
             Solution solution;
             //todo: accept a directory which scans for project-files recursively (makes sense only in the FEI use-case)
@@ -254,7 +254,7 @@ namespace DepCharter
                 solution.markIgnoredProjects();
             }
 
-            Program.model.Solutions.Add(solution);
+            Program.Model.Solutions.Add(solution);
 
             int deps = solution.DepCount;
             Console.WriteLine("Found " + solution.projects.Values.Count + " projects with " + deps + " relationships");

@@ -13,7 +13,7 @@ namespace DepCharter
     {
         public ProjectDictionary projects = new ProjectDictionary();
 
-        void Add(Project project)
+        public void Add(Project project)
         {
             if (projects.ContainsKey(project.Id))
             {
@@ -44,9 +44,10 @@ namespace DepCharter
                 line = line.Trim();
                 if (line.StartsWith("Project"))
                 {
-                    Project project = new Project(this, line);
+                    Project project = new Project(this);
+                    project.InitializeFromSolutionLine(line);
                     project.readDependencies(reader);
-                    this.Add(project);
+                    Program.Model.Add(this, project);
                 }
             }
 

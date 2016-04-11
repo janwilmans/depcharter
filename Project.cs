@@ -24,9 +24,8 @@ namespace DepCharter
 
     class Project
     {
-        public Project(Solution aSolution, string firstLine)
+        public void InitializeFromSolutionLine(string firstLine)
         {
-            Solution = aSolution;
             SolutionLine solutionLine = new SolutionLine(firstLine);
             this.Id = solutionLine[2][1].ToLower();       // store in lower-case, _must_ be treated case-insensitive
             this.Name = solutionLine[0][3];
@@ -102,6 +101,7 @@ namespace DepCharter
         {
             string extraInfo = "";
             if (this.Ignore) return;
+            if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(this))) return;
             String color = "white";   // white so independend .sln files will look 'normal'
             switch (OutputType)
             {
@@ -136,6 +136,7 @@ namespace DepCharter
             foreach (Project depProject in this.dependencies)
             {
                 if (depProject.Ignore) continue;
+                if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(depProject))) continue;
                 writer.WriteLine("\"" + this.Name + "\" -> \"" + depProject.Name + "\"");
             }
         }
@@ -150,7 +151,7 @@ namespace DepCharter
             foreach (string projectName in list)
             {
                 Project project = Solution.findProject(projectName);
-                if (project == null)
+                if (project == null)                                     // todo: this is wrong, it assumes a project can only be references once, which is stupid.
                 {
                     string projectdir = Path.GetDirectoryName(Filename);
                     // assumption: the cocabasedir is four levels deep. ie. C:\sandbox\<stream_name>\<component>
