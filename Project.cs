@@ -71,8 +71,8 @@ namespace DepCharter
                     if (depLine.StartsWith("{"))
                     {
                         string depId = depLine.Substring(0, depLine.IndexOf("}") + 1);
-                        dependencyIds.Add(depId);
-                        if (Settings.verbose) Console.WriteLine("dependency: " + depId);
+                        solutionDependencyIds.Add(depId);
+                        if (Settings.verbose) Console.WriteLine("SLN dependency: " + depId);
                     }
                     if (line.StartsWith("EndProjectSection"))
                     {
@@ -91,9 +91,9 @@ namespace DepCharter
         public void writeDepsInDotCodeRecursive(StreamWriter writer)
         {
             writeDepsInDotCode(writer);
-            foreach (Project depProject in this.dependencies)
+            foreach (Dependency dependency in this.dependencies)
             {
-                depProject.writeDepsInDotCodeRecursive(writer);
+                dependency.Project.writeDepsInDotCodeRecursive(writer);
             }
         }
 
@@ -133,11 +133,22 @@ namespace DepCharter
             String objectString = String.Format("\"{0}\" [shape=box,style=filled,fillcolor={1},color=black];", this.Name + extraInfo, color);
             writer.WriteLine(objectString);
 
-            foreach (Project depProject in this.dependencies)
+            foreach (Dependency dependency in this.dependencies)
             {
-                if (depProject.Ignore) continue;
-                if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(depProject))) continue;
-                writer.WriteLine("\"" + this.Name + "\" -> \"" + depProject.Name + "\"");
+                if (dependency.Project.Ignore) continue;
+                if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(dependency.Project))) continue;
+
+                string arrowType = "[color=\"red\"]";
+                if (dependency.Origin == OriginType.ProjectToProject)
+                {
+                    arrowType = "[color=\"blue\"]";
+                }
+                if (dependency.Origin == OriginType.UserProperty)
+                {
+                    arrowType = "[color=\"green\"]";
+                }
+
+                writer.WriteLine("\"" + this.Name + "\" -> \"" + dependency.Project.Name + "\" " + arrowType);
             }
         }
 
@@ -164,11 +175,27 @@ namespace DepCharter
             }
         }
 
-        public void AddDependentProjectById(string id)
+        public void AddSolutionDependency(string id)
         {
-            Project dependentProject = Solution.projects[id];
-            dependencies.Add(dependentProject);
-            dependentProject.users.Add(this);
+            Project project = Solution.projects[id];
+            Dependency dependency = new Dependency(project, OriginType.Solution);
+            dependencies.Add(dependency);
+            project.users.Add(dependency);
+        }
+
+        public void AddProjectToProjectDependency(string id) 
+        {
+            Project project = Solution.projects[id];
+            Dependency dependency = new Dependency(project, OriginType.ProjectToProject);
+            dependencies.Add(dependency);
+            project.users.Add(dependency);
+        }
+
+        public void AddUserPropertyDependency(Project project)
+        {
+            Dependency dependency = new Dependency(project, OriginType.UserProperty);
+            dependencies.Add(dependency);
+            project.users.Add(dependency);
         }
 
         public void resolveIds()
@@ -176,18 +203,26 @@ namespace DepCharter
             if (!Settings.userProperties)
             {
                 // resolve project-relationship from solution
-                foreach (string id in dependencyIds)
+                foreach (string id in solutionDependencyIds)
                 {
-                    AddDependentProjectById(id);
+                    AddSolutionDependency(id);
                 }
                 return;
             }
 
             // read relationships from FEI specific UserProperties
-            if (!this.userProperties.ContainsKey("ProjectUses")) return;
-
+            string[] list = null;
             char[] charSeparators = { ';' };
-            string[] list = userProperties["ProjectUses"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+            if (this.userProperties.ContainsKey("ProjectUses"))
+            {
+                list = userProperties["ProjectUses"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+            }
+            if (this.userProperties.ContainsKey("ProjectDependsOn"))
+            {
+                list = userProperties["ProjectDependsOn"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+            }
+            if (list == null) return;
+
             foreach (string projectName in list)
             {
                 if (string.IsNullOrEmpty(projectName)) continue;
@@ -196,12 +231,11 @@ namespace DepCharter
                 {
                     dependentProject = Solution.createDummyProject(projectName);
                 }
-                dependencies.Add(dependentProject);
-                dependentProject.users.Add(this);
+                AddUserPropertyDependency(dependentProject);
             }
         }
 
-        public void readProjectReferences(XmlContext doc)
+        public void readProjectToProjectReferences(XmlContext doc)
         {
             var projectReferences = doc.GetNodes("//vs:ItemGroup/vs:ProjectReference/vs:Project");
             foreach (XmlElement projectId in projectReferences)
@@ -212,8 +246,12 @@ namespace DepCharter
                 {
                     if (Solution.containsProjectId(id))
                     {
-                        AddDependentProjectById(id);
+                        AddProjectToProjectDependency(id);
                     }
+                }
+                else
+                {
+                    AddProjectToProjectDependency(id);
                 }
             }
         }
@@ -249,6 +287,7 @@ namespace DepCharter
             if (projectFile.Name.EndsWith(".csproj"))
             {
                 // its a C# project
+                Name = "[C#] " + Name;
                 ProjectType = "C#";
                 informationCollected = true;
 
@@ -273,6 +312,7 @@ namespace DepCharter
                     }
                     Id = projectGuid;
                 }
+                readProjectToProjectReferences(doc);
             } // end C# part
             else if (projectFile.Name.EndsWith(".vcproj") || projectFile.Name.EndsWith(".vcxproj"))
             {
@@ -298,7 +338,7 @@ namespace DepCharter
                 {
                     ReadVCXProjStyle(doc, configurations);
                     informationCollected = true;
-                    readProjectReferences(doc);
+                    readProjectToProjectReferences(doc);
                 }
                 else
                 {
@@ -330,10 +370,10 @@ namespace DepCharter
                     else
                     {
                         // assume it is a ; separated list.
-                        //if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]:");
+                        if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]:");
                         foreach (string attr in a.Value.Split(';'))
                         {
-                            //if (Settings.verbose) Console.WriteLine("  " + attr);
+                            if (Settings.verbose) Console.WriteLine("  FBT reference: " + attr);
                         }
                     }
 
@@ -471,9 +511,9 @@ namespace DepCharter
             }
         }
 
-        public ArrayList dependencyIds = new ArrayList();   // project id's (strings) from the .sln file
-        public ArrayList dependencies = new ArrayList();    // project objects I use
-        public ArrayList users = new ArrayList();           // project objects that use me
+        public ArrayList solutionDependencyIds = new ArrayList();   // project id's (strings) from the .sln file
+        public List<Dependency> dependencies = new List<Dependency>();    // project objects I use
+        public List<Dependency> users = new List<Dependency>();           // project objects that use me
         public StringMap userProperties = new StringMap();  // FEI specific Project UserProperties
 
         public string OutputName;               // filename

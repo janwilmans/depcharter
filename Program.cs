@@ -434,6 +434,10 @@ namespace DepCharter
     }
 }
 
-//todo: CoCa projects are not always found, maybe the project-base directory is not correctly determined? 
-//todo: how to interpret 'AUTOLOADER' as dependency?
-//tood: see BhvSpecimenExchangePS probably just an errornous dependency
+//todo: CoCa projects are not always found, maybe the project-base directory is not correctly determined? or there are old/broken references
+//todo: how to interpret 'AUTOLOADER' as dependency?    -> you don't 'AUTOLOADER' is a component (never appears in 'ProjectDependsOn' (FDT) or 'ProjectUses' (FBT)
+//      but only in 'ProjectRefers'
+//todo: create an option to also visualize 'ProjectRefers' entries (external components like 'INFRA', 'FEI_CPPLIBS', or 'AUTOLOADER', 'boost' or 'googlemock' (SCOTS components)
+//todo: see BhvSpecimenExchangePS probably just an errornous dependency
+//todo: color the edges (the arrow color can express the type of reference)
+//tood: Since 2012 and 2.30.0, Graphviz supports gradient color: color="blue:red".

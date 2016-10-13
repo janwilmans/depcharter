@@ -51,6 +51,7 @@
       <DependentUpon>CharterForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Commandline.cs" />
+    <Compile Include="Dependency.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="ImageViewport.cs" />
     <Compile Include="NWImageViewer.cs">
