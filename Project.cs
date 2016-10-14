@@ -91,9 +91,9 @@ namespace DepCharter
         public void writeDepsInDotCodeRecursive(StreamWriter writer)
         {
             writeDepsInDotCode(writer);
-            foreach (Dependency dependency in this.dependencies)
+            foreach (var project in this.dependencies.Keys)
             {
-                dependency.Project.writeDepsInDotCodeRecursive(writer);
+                project.writeDepsInDotCodeRecursive(writer);
             }
         }
 
@@ -133,32 +133,55 @@ namespace DepCharter
             String objectString = String.Format("\"{0}\" [shape=box,style=filled,fillcolor={1},color=black];", this.Name + extraInfo, color);
             writer.WriteLine(objectString);
 
-            foreach (Dependency dependency in this.dependencies)
+            foreach (var project in this.dependencies.Keys)
             {
-                if (dependency.Project.Ignore) continue;
-                if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(dependency.Project))) continue;
+                var origins = dependencies[project];
+                if (project.Ignore) continue;
+                if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(project))) continue;
 
-                string arrowType = "[color=\"red\"]";
-                if (dependency.Origin == OriginType.ProjectToProject)
-                {
-                    arrowType = "[color=\"blue\"]";
-                }
-                if (dependency.Origin == OriginType.UserProperty)
-                {
-                    arrowType = "[color=\"green\"]";
-                }
 
-                writer.WriteLine("\"" + this.Name + "\" -> \"" + dependency.Project.Name + "\" " + arrowType);
+                List<string> colors = new List<string>();
+                foreach (var origin in origins)
+                {
+                    if (origin == Origin.ProjectToProject)
+                    {
+                        colors.Add("blue");     // fractured lines (multicolor in series) gives a pretty bad visual effect....
+                    }
+                    if (origin == Origin.UserProperty)
+                    {
+                        colors.Add("green");
+                    }
+                    if (origin == Origin.Solution)
+                    {
+                        colors.Add("red");
+                    }
+                }
+                string arrowType = "[color=\"" + string.Join(":", colors.ToArray()) + "\"]";
+
+                writer.WriteLine("\"" + this.Name + "\" -> \"" + project.Name + "\" " + arrowType);
             }
+        }
+
+        public List<string> GetUserPropertyEntries()
+        {
+            char[] charSeparators = { ';' };
+            string result = "";
+            if (this.userProperties.ContainsKey("ProjectUses"))
+            {
+                result = userProperties["ProjectUses"];
+            }
+            if (this.userProperties.ContainsKey("ProjectDependsOn"))
+            {
+                result = userProperties["ProjectDependsOn"];
+            }
+            return new List<string>(result.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries));
         }
 
         public void recursivelyAddAllProjects()
         {
             if (!Settings.userProperties) return;
-            if (!this.userProperties.ContainsKey("ProjectUses")) return;
-
-            char[] charSeparators = { ';' };
-            string[] list = userProperties["ProjectUses"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+            var list = GetUserPropertyEntries();
+            if (list.Count == 0) return;
             foreach (string projectName in list)
             {
                 Project project = Solution.findProject(projectName);
@@ -175,27 +198,27 @@ namespace DepCharter
             }
         }
 
+        private void AddDependency(Project project, Origin origin)
+        {
+            dependencies.Add(project, origin);
+            project.users.Add(this, origin);
+        }
+
         public void AddSolutionDependency(string id)
         {
             Project project = Solution.projects[id];
-            Dependency dependency = new Dependency(project, OriginType.Solution);
-            dependencies.Add(dependency);
-            project.users.Add(dependency);
+            AddDependency(project, Origin.Solution);
         }
 
         public void AddProjectToProjectDependency(string id) 
         {
             Project project = Solution.projects[id];
-            Dependency dependency = new Dependency(project, OriginType.ProjectToProject);
-            dependencies.Add(dependency);
-            project.users.Add(dependency);
+            AddDependency(project, Origin.ProjectToProject);
         }
 
         public void AddUserPropertyDependency(Project project)
         {
-            Dependency dependency = new Dependency(project, OriginType.UserProperty);
-            dependencies.Add(dependency);
-            project.users.Add(dependency);
+            AddDependency(project, Origin.UserProperty);
         }
 
         public void resolveIds()
@@ -211,19 +234,7 @@ namespace DepCharter
             }
 
             // read relationships from FEI specific UserProperties
-            string[] list = null;
-            char[] charSeparators = { ';' };
-            if (this.userProperties.ContainsKey("ProjectUses"))
-            {
-                list = userProperties["ProjectUses"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
-            }
-            if (this.userProperties.ContainsKey("ProjectDependsOn"))
-            {
-                list = userProperties["ProjectDependsOn"].Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
-            }
-            if (list == null) return;
-
-            foreach (string projectName in list)
+            foreach (string projectName in GetUserPropertyEntries())
             {
                 if (string.IsNullOrEmpty(projectName)) continue;
                 Project dependentProject = Solution.findProject(projectName);
@@ -241,18 +252,9 @@ namespace DepCharter
             foreach (XmlElement projectId in projectReferences)
             {
                 string id = projectId.InnerText;
-                if (Settings.verbose) Console.WriteLine("         Reference: " + id);
-                if (Settings.restrictToSolution)
-                {
-                    if (Solution.containsProjectId(id))
-                    {
-                        AddProjectToProjectDependency(id);
-                    }
-                }
-                else
-                {
-                    AddProjectToProjectDependency(id);
-                }
+                if (Settings.verbose) Console.WriteLine("  ProjectReference: " + id);
+                if (Settings.restrictToSolution && (!Solution.containsProjectId(id))) continue;
+                AddProjectToProjectDependency(id);
             }
         }
 
@@ -512,8 +514,8 @@ namespace DepCharter
         }
 
         public ArrayList solutionDependencyIds = new ArrayList();   // project id's (strings) from the .sln file
-        public List<Dependency> dependencies = new List<Dependency>();    // project objects I use
-        public List<Dependency> users = new List<Dependency>();           // project objects that use me
+        public DependencyCollection dependencies = new DependencyCollection();    // project objects I use
+        public DependencyCollection users = new DependencyCollection();           // project objects that use me
         public StringMap userProperties = new StringMap();  // FEI specific Project UserProperties
 
         public string OutputName;               // filename
