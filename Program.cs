@@ -80,6 +80,9 @@ namespace DepCharter
               <TR><TD bgcolor=""lightblue"">dll</TD></TR>
               <TR><TD bgcolor=""lightgray"">static</TD></TR>
               <TR><TD bgcolor=""white"">not found</TD></TR>
+              <TR><TD bgcolor=""red"">Solution dependency</TD></TR>
+              <TR><TD bgcolor=""blue"">Project reference</TD></TR>
+              <TR><TD bgcolor=""green"">User Property</TD></TR>
               </TABLE>>];";
             dotFile.WriteLine(legend);
         }
@@ -438,6 +441,9 @@ namespace DepCharter
 //todo: how to interpret 'AUTOLOADER' as dependency?    -> you don't 'AUTOLOADER' is a component (never appears in 'ProjectDependsOn' (FDT) or 'ProjectUses' (FBT)
 //      but only in 'ProjectRefers'
 //todo: create an option to also visualize 'ProjectRefers' entries (external components like 'INFRA', 'FEI_CPPLIBS', or 'AUTOLOADER', 'boost' or 'googlemock' (SCOTS components)
+//      use spheres to indicate Components?
+//todo: add arrow-colors to legenda
 //todo: see BhvSpecimenExchangePS probably just an errornous dependency
-//todo: color the edges (the arrow color can express the type of reference)
-//tood: Since 2012 and 2.30.0, Graphviz supports gradient color: color="blue:red".
+//todo: show duplicated dependencies as separate arrows
+//todo: see http://dependencyvisualizer.codeplex.com/ (similar project)
+//todo: use http://quickgraph.codeplex.com/ ?
