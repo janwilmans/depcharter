@@ -38,6 +38,12 @@ namespace DepCharter
             Solution = aSolution;
         }
 
+        public Project(string id)
+        {
+            this.Id = id;
+            this.Name = Id;
+        }
+
         static public Project createDummyProject(Solution solution, string name)
         {
             Project dummy = new Project(solution);
@@ -210,10 +216,26 @@ namespace DepCharter
             AddDependency(project, Origin.Solution);
         }
 
+        public Project GetProjectForId(string id)
+        {
+            Project result = null;
+            if (Solution.projects.ContainsKey(id))
+            {
+                // project is the same solution 
+                result = Solution.projects[id];
+            }
+            else
+            {
+                // todo: resolve the project outside the solution by scanning for it recursively down the directory-tree
+                result = new Project(id);
+            }
+            return result;
+        }
+
         public void AddProjectToProjectDependency(string id) 
         {
-            Project project = Solution.projects[id];
-            AddDependency(project, Origin.ProjectToProject);
+            // project can refer also to projects outside the solution
+            AddDependency(GetProjectForId(id), Origin.ProjectToProject);
         }
 
         public void AddUserPropertyDependency(Project project)
@@ -420,7 +442,7 @@ namespace DepCharter
             {
                 ProjectType = "unknown";
                 OutputName = projectFile.Name;
-                Console.WriteLine("File could not be identified as a project file!");
+                Console.WriteLine("File could not be identified as a project file: " + OutputName);
             }
         }
 
