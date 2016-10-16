@@ -293,17 +293,17 @@ namespace DepCharter
                 ProjectType = "C#";
                 informationCollected = true;
 
-                XmlNodeList outputList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:OutputType");
+                var outputList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:OutputType").ToList();
                 if (outputList.Count > 0)
                 {
                     OutputTypeName = outputList[0].FirstChild.Value;
                 }
-                XmlNodeList outputNameList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:AssemblyName");
+                var outputNameList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:AssemblyName").ToList();
                 if (outputNameList.Count > 0)
                 {
                     OutputName = outputNameList[0].FirstChild.Value;
                 }
-                XmlNodeList projectGuidList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:ProjectGuid");
+                var projectGuidList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:ProjectGuid").ToList();
                 if (projectGuidList.Count > 0)
                 {
                     string projectGuid = projectGuidList[0].FirstChild.Value.ToLower();
@@ -420,11 +420,12 @@ namespace DepCharter
             {
                 ProjectType = "unknown";
                 OutputName = projectFile.Name;
+                Console.WriteLine("File could not be identified as a project file!");
             }
         }
 
         // received a list of 'PropertyGroup' Nodes with an Attribute: 'Label="Configuration"'
-        void ReadVCXProjStyle(XmlContext doc, XmlNodeList configs)
+        void ReadVCXProjStyle(XmlContext doc, List<XmlNode> configs)
         {
             XmlElement configuration = null;
             foreach (XmlElement config in configs)
@@ -462,7 +463,7 @@ namespace DepCharter
             OutputTypeName = doc.GetNodeContent(configuration, "ConfigurationType", ConfigurationType.Unexpected.ToString());
         }
 
-        void ReadVCProjStyle(XmlNodeList configs)
+        void ReadVCProjStyle(List<XmlNode> configs)
         {
             // some dirty things to be flexible about the names of Configurations
             if (configs.Count > 0)
@@ -523,9 +524,9 @@ namespace DepCharter
         public string OutputTypeName;           // String representation of outputTypeName
         public string ProjectType;              // C#,C++,C++/CLI
 
-        public string Name;
-        public string Filename;
-        public string Id;
+        public string Name = "";
+        public string Filename = "";
+        public string Id = "";
         public bool Ignore;
         Solution Solution;
 

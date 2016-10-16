@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Xml;
 using System.Xml.XPath;
+using System.Runtime.InteropServices;
 
 namespace DepCharter
 {
@@ -65,6 +66,9 @@ namespace DepCharter
 
     class XmlContext : XmlDocument
     {
+        [DllImport("kernel32.dll")]
+        public static extern void OutputDebugString(string lpOutputString);
+
         public XmlContext()
             : base()
         {
@@ -78,16 +82,30 @@ namespace DepCharter
 
         // mask the normal SelectNode method and replace it 
         // with one the incorporates a pre-set namespace
-        public XmlNodeList GetNodes(string xpath)
+        public List<XmlNode> GetNodes(string xpath)
         {
-            XmlNodeList result = null;
-            if (NamespaceManager == null)
+            XmlNodeList list = null;
+            try
             {
-                result = base.SelectNodes(xpath);
+                if (NamespaceManager == null)
+                {
+                    list = base.SelectNodes(xpath);
+                }
+                else
+                {
+                    list = base.SelectNodes(xpath, NamespaceManager);
+                }
             }
-            else
+            catch (System.Xml.XPath.XPathException e)
             {
-                result = base.SelectNodes(xpath, NamespaceManager);
+                OutputDebugString("xpath: " + xpath + " not found.");
+            }
+
+            List<XmlNode> result = new List<XmlNode>();
+            if (list == null) return result;
+            foreach (XmlNode xmlnode in list)
+            {
+                result.Add(xmlnode);
             }
             return result;
         }
@@ -95,7 +113,7 @@ namespace DepCharter
         public string GetNodeContent(string xpath, string defaultvalue)
         {
             string result = defaultvalue;
-            XmlNodeList list = GetNodes(xpath);
+            var list = GetNodes(xpath);
             if (list.Count > 0)
             {
                 result = list[0].InnerXml;
@@ -118,4 +136,26 @@ namespace DepCharter
     }
 
     class StringMap : Dictionary<string, string> { }
+
+
+    public static class ExtensionMethods
+    {
+        public static List<XmlNode> ToList(this IEnumerable list)
+        {
+            List<XmlNode> result = new List<XmlNode>();
+            foreach (XmlNode item in list)
+            {
+                result.Add(item);
+            }
+            return result;
+        }
+    }
 }
+
+namespace System.Runtime.CompilerServices
+{
+    [AttributeUsage(AttributeTargets.Assembly | AttributeTargets.Class
+         | AttributeTargets.Method)]
+    public sealed class ExtensionAttribute : Attribute { }
+}
+

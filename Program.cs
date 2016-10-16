@@ -70,7 +70,7 @@ namespace DepCharter
 
         public void WriteLegend()
         {
-            string legend = @"
+            dotFile.WriteLine(@"
               ""Legend""
               [shape=none]
               [label=<<TABLE border=""0"" cellborder=""1"" CELLSPACING=""0"">
@@ -81,10 +81,13 @@ namespace DepCharter
               <TR><TD bgcolor=""lightgray"">static</TD></TR>
               <TR><TD bgcolor=""white"">not found</TD></TR>
               <TR><TD bgcolor=""red"">Solution dependency</TD></TR>
-              <TR><TD bgcolor=""blue"">Project reference</TD></TR>
-              <TR><TD bgcolor=""green"">User Property</TD></TR>
-              </TABLE>>];";
-            dotFile.WriteLine(legend);
+              <TR><TD bgcolor=""blue"">Project reference</TD></TR>");
+
+            if (Settings.userProperties)
+            {
+                dotFile.WriteLine(@"<TR><TD bgcolor=""green"">User Property</TD></TR>");
+            }
+            dotFile.WriteLine(@"</TABLE>>];");
         }
 
         static public void reduceDotfile(string inputname, string outputname)
