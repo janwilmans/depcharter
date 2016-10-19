@@ -183,12 +183,9 @@ namespace DepCharter
             return new List<string>(result.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries));
         }
 
-        public void recursivelyAddAllProjects()
+        public void recursivelyAddUserPropertyProjects()
         {
-            if (!Settings.userProperties) return;
-            var list = GetUserPropertyEntries();
-            if (list.Count == 0) return;
-            foreach (string projectName in list)
+            foreach (string projectName in GetUserPropertyEntries())
             {
                 Project project = Solution.findProject(projectName);
                 if (project == null)                                     // todo: this is wrong, it assumes a project can only be referenced once, which is stupid.
@@ -199,7 +196,7 @@ namespace DepCharter
                     Console.WriteLine("createCoCaProject: " + projectName + " (for " + this.Name + ")");
 
                     project = Solution.createCoCaProject(cocabasedir, projectName);
-                    project.recursivelyAddAllProjects();
+                    project.recursivelyAddUserPropertyProjects();
                 }
             }
         }
@@ -241,6 +238,7 @@ namespace DepCharter
 
         public void AddUserPropertyDependency(Project project)
         {
+            Console.WriteLine("  UP-Dependency: " + this.Name + " -> " + project.Name);
             AddDependency(project, Origin.UserProperty);
         }
 

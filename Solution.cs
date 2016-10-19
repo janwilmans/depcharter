@@ -58,37 +58,57 @@ namespace DepCharter
             }
         }
 
+        public string ReplaceFirst(string text, string search, string replace)
+        {
+            int pos = text.IndexOf(search);
+            if (pos < 0)
+            {
+                return text;
+            }
+            return text.Substring(0, pos) + replace + text.Substring(pos + search.Length);
+        }
+
         // a CoCa project name looks like "subdirname.projectname" 
         // for example 'tem.mdlsmc', means:
-        // a project 'basedir\tem\mdlsmc.vcxproj' OR 'basedir\tem\mdlsmc.csproj' OR
-        //           'basedir\tem\src\mdlsmc.vcxproj' OR 'basedir\tem\src\mdlsmc.csproj' exists
+        // a project 'basedir\tem\mdlsmc\mdlsmc.vcxproj' OR 'basedir\tem\mdlsmc\mdlsmc.csproj' OR
+        //           'basedir\tem\mdlsmc\src\mdlsmc.vcxproj' OR 'basedir\tem\mdlsmc\src\mdlsmc.csproj' exists
         public Project createCoCaProject(string basedir, string CoCaProjectName)
         {
-            Project result;
             string projectname = CoCaProjectName.Substring(CoCaProjectName.LastIndexOf(".") + 1);
-            string basename = basedir + CoCaProjectName.Trim().Replace(".", "\\") + "\\";
+            string basename = basedir + ReplaceFirst(CoCaProjectName, ".", "\\").Trim();
+
+            if (!Directory.Exists(basename))
+            {
+                Console.WriteLine("Project: " + CoCaProjectName + " not found because base direcory: " + basedir + " does not exist!");
+                return createDummyProject(CoCaProjectName);
+            }
 
             if (Directory.Exists(basename + "src\\"))
             {
-                basename = basename + "src\\"; 
+                basename = basename + "src\\";
             }
 
-            string fullname = basename + projectname + ".csproj";
-            if (!File.Exists(fullname))
-            {
-                fullname = basename + projectname + ".vcxproj";
-            }
+            List<string> files = new List<string>();
+            if (files.Count == 0) files.AddRange(Directory.GetFiles(basename, "*.csproj"));
+            if (files.Count == 0) files.AddRange(Directory.GetFiles(basename, "*.vcxproj"));
+            if (files.Count == 0) files.AddRange(Directory.GetFiles(basename, "*.vcproj"));
 
-            if (File.Exists(fullname))
-            {
-                result = readProject(fullname, CoCaProjectName);
-            }
-            else
+            if (files.Count == 0)
             {
                 Console.WriteLine("Project: " + CoCaProjectName + " not found at base direcory: " + basedir + "!");
-                result = createDummyProject(CoCaProjectName);
+                return createDummyProject(CoCaProjectName);
             }
-            return result;
+
+            if (files.Count > 1)
+            {
+                Console.WriteLine("Multiple suspicious projects!");
+                foreach (var file in files)
+                {
+                    Console.WriteLine("  " + file);
+                }
+                Console.WriteLine("Defaulting to: " + files[0]);
+            }
+            return readProject(files[0], CoCaProjectName);
         }
 
         public Project readProject(string aFullname, string coCaProjectName)
@@ -103,10 +123,13 @@ namespace DepCharter
 
         public void resolveIds()
         {
-            // copy the list before iterating, resolveIds may add dummy-projects in the process
-            foreach (Project project in new ArrayList(projects.Values))
+            if (Settings.userProperties)
             {
-                project.recursivelyAddAllProjects();
+                // copy the list before iterating, resolveIds may add dummy-projects in the process
+                foreach (Project project in new ArrayList(projects.Values))
+                {
+                    project.recursivelyAddUserPropertyProjects();
+                }
             }
 
             foreach (Project project in new ArrayList(projects.Values))
