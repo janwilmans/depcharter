@@ -240,7 +240,7 @@ namespace DepCharter
 
         static void Execute()
         {
-            Program.Model = new BuildModel();
+            Program.Model = new BuildModel();   //todo: refactor solution and project to use the BuildModel
 
             Solution solution;
             //todo: accept a directory which scans for project-files recursively (makes sense only in the FEI use-case)

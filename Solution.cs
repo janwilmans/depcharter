@@ -175,8 +175,8 @@ namespace DepCharter
 
         public void writeDepsInDotCodeForSolution(StreamWriter writer)
         {
-            Console.WriteLine("Writing dependencies for " + this.Name + " to dot file");
-            foreach (Project project in projects.Values)
+            Console.WriteLine("Writing dependencies for project '" + this.Name + "' to dot file");
+            foreach (Project project in Program.Model.SolutionProjects.Values)
             {
                 // use the non-recursive method
                 project.writeDepsInDotCode(writer);

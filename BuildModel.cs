@@ -10,7 +10,7 @@ using System.Diagnostics;
 namespace DepCharter
 {
     class ProjectDictionary : Dictionary<string, Project> { }
-    class SolutionDictionary : Dictionary<Solution, bool> { }
+    class SolutionDictionary : Dictionary<Solution, bool> { }   //.net2.0 does not have HashSet<>, we work around it using the keys of a Dictionary
 
     class BuildModel
     {
