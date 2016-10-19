@@ -78,7 +78,7 @@ namespace DepCharter
                     {
                         string depId = depLine.Substring(0, depLine.IndexOf("}") + 1);
                         solutionDependencyIds.Add(depId);
-                        if (Settings.verbose) Console.WriteLine("SLN dependency: " + depId);
+                        if (Settings.verbose) Console.WriteLine("  SLN dependency: " + depId);
                     }
                     if (line.StartsWith("EndProjectSection"))
                     {
@@ -88,7 +88,7 @@ namespace DepCharter
                 }
                 if (line.ToLower().Trim() == "endproject")
                 {
-                    if (Settings.verbose) Console.WriteLine("EndProject\n");
+                    if (Settings.verbose) Console.WriteLine("EndProject");
                     break;
                 }
             }
@@ -107,7 +107,7 @@ namespace DepCharter
         {
             string extraInfo = "";
             if (this.Ignore) return;
-            if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(this))) return;
+            //if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(this))) return; // does not make sense (projects should not have been added in the first place)
             String color = "white";   // white so independend .sln files will look 'normal'
             switch (OutputType)
             {
@@ -145,10 +145,10 @@ namespace DepCharter
                 if (project.Ignore) continue;
                 if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(project))) continue;
 
-
                 List<string> colors = new List<string>();
                 foreach (var origin in origins)
                 {
+                    //Console.WriteLine(this.Name + " -> [" + origin + "] " + project.Name);
                     if (origin == Origin.ProjectToProject)
                     {
                         colors.Add("blue");     // fractured lines (multicolor in series) gives a pretty bad visual effect....
@@ -191,7 +191,7 @@ namespace DepCharter
             foreach (string projectName in list)
             {
                 Project project = Solution.findProject(projectName);
-                if (project == null)                                     // todo: this is wrong, it assumes a project can only be references once, which is stupid.
+                if (project == null)                                     // todo: this is wrong, it assumes a project can only be referenced once, which is stupid.
                 {
                     string projectdir = Path.GetDirectoryName(Filename);
                     // assumption: the cocabasedir is four levels deep. ie. C:\sandbox\<stream_name>\<component>
@@ -216,7 +216,7 @@ namespace DepCharter
             AddDependency(project, Origin.Solution);
         }
 
-        public Project GetProjectForId(string id)
+        public Project GetProjectForId(string id, string name)
         {
             Project result = null;
             if (Solution.projects.ContainsKey(id))
@@ -227,15 +227,16 @@ namespace DepCharter
             else
             {
                 // todo: resolve the project outside the solution by scanning for it recursively down the directory-tree
-                result = new Project(id);
+                if (Settings.verbose) Console.WriteLine("  ^-- could not be resolved!");
+                result = new Project(name);
             }
             return result;
         }
 
-        public void AddProjectToProjectDependency(string id) 
+        public void AddProjectToProjectDependency(string id, string name) 
         {
             // project can refer also to projects outside the solution
-            AddDependency(GetProjectForId(id), Origin.ProjectToProject);
+            AddDependency(GetProjectForId(id, name), Origin.ProjectToProject);
         }
 
         public void AddUserPropertyDependency(Project project)
@@ -271,12 +272,13 @@ namespace DepCharter
         public void readProjectToProjectReferences(XmlContext doc)
         {
             var projectReferences = doc.GetNodes("//vs:ItemGroup/vs:ProjectReference/vs:Project");
-            foreach (XmlElement projectId in projectReferences)
+            foreach (XmlElement project in projectReferences)
             {
-                string id = projectId.InnerText;
-                if (Settings.verbose) Console.WriteLine("  ProjectReference: " + id);
+                string name = Path.GetFileName(project.ParentNode.Attributes["Include"].InnerText);
+                string id = project.InnerText;
+                if (Settings.verbose) Console.WriteLine("  ProjectReference: " + id + " " + name);
                 if (Settings.restrictToSolution && (!Solution.containsProjectId(id))) continue;
-                AddProjectToProjectDependency(id);
+                AddProjectToProjectDependency(id, name);
             }
         }
 
@@ -394,11 +396,11 @@ namespace DepCharter
                     else
                     {
                         // assume it is a ; separated list.
-                        if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]:");
-                        foreach (string attr in a.Value.Split(';'))
-                        {
-                            if (Settings.verbose) Console.WriteLine("  FBT reference: " + attr);
-                        }
+                        //if (Settings.verbose) Console.WriteLine("FEI UserProperty[" + a.Name + "]:");
+                        //foreach (string attr in a.Value.Split(';'))
+                        //{
+                        //    if (Settings.verbose) Console.WriteLine("  FBT reference: " + attr);
+                        //}
                     }
 
                     userProperties[a.Name] = a.Value;

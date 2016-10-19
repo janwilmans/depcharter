@@ -25,7 +25,7 @@ namespace DepCharter
             optionList.Add(new Option("/c", Parser.config, "  /c  : show config window"));
             optionList.Add(new Option("/v", Parser.verbose, "  /v  : be verbose"));
             optionList.Add(new Option("/u", Parser.userProperties, "  /u  : read UserProperties from Project files to establish relationships"));
-            optionList.Add(new Option("/o", Parser.restrictToSolution, "  /o  : only include projects that are actually in the solution"));
+            optionList.Add(new Option("/o", Parser.restrictToSolution, "  /o  : only show projects that are actually in the solution"));
             //optionList.Add(new Option("/sd", Parser.searchDirs, "  /sd : search directories to find related projects"));
         }
 

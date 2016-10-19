@@ -104,15 +104,12 @@ namespace DepCharter
         public void resolveIds()
         {
             // copy the list before iterating, resolveIds may add dummy-projects in the process
-            ArrayList projectList = new ArrayList(projects.Values);
-
-            foreach (Project project in projectList)
+            foreach (Project project in new ArrayList(projects.Values))
             {
                 project.recursivelyAddAllProjects();
             }
 
-            projectList = new ArrayList(projects.Values);
-            foreach (Project project in projectList)
+            foreach (Project project in new ArrayList(projects.Values))
             {
                 project.resolveIds();
             }
