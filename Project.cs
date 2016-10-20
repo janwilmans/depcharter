@@ -308,6 +308,8 @@ namespace DepCharter
                 //        @label='foo' 
             }
 
+            // todo: .vbproj and .shproj project missing (visual basic and shared code) 
+
             if (projectFile.Name.EndsWith(".csproj"))
             {
                 // its a C# project
