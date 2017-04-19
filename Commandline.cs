@@ -14,6 +14,8 @@ namespace DepCharter
     {
         static public void Initialize()
         {
+            Directory.CreateDirectory(Settings.TempDirectory);
+
             optionList.Add(new Option("/?", Parser.help, "  /?  : display usage information"));
             optionList.Add(new Option("/r", Parser.reduce, "  /r  : reduce edges implied by transitivity"));
             optionList.Add(new Option("/p", Parser.project, Parser.projectArgument, "  /p <project> : include project recursively (may be specified more then once)"));
@@ -126,6 +128,12 @@ namespace DepCharter
                 return;
             }
         }
+
+        public static string TempDirectory
+        {
+            get { return System.IO.Path.GetTempPath() + "DepCharter\\"; }
+        }
+
         public static string input;
         public static string workdir;
         public static bool verbose;

@@ -349,7 +349,7 @@ namespace DepCharter
                 }
             }
 
-            string dotFileName = Settings.workdir + "dep.txt";
+            string dotFileName = Settings.TempDirectory + "dep.txt";
             DotWriter dotWriter = new DotWriter(dotFileName);
             dotWriter.WriteAspectRatio(Settings.aspectratio);
 
@@ -374,12 +374,12 @@ namespace DepCharter
             solution.writeDepsInDotCode(dotWriter.dotFile);
             dotWriter.Close();
 
-            string pngFile = Settings.workdir + solution.Name + "_dep.png";
-            string repngFile = Settings.workdir + solution.Name + "_redep.png";
+            string pngFile = Settings.TempDirectory + solution.Name + "_dep.png";
+            string repngFile = Settings.TempDirectory + solution.Name + "_redep.png";
 
             if (Settings.reduce)
             {
-                string redepFile = Settings.workdir + "redep.txt";
+                string redepFile = Settings.TempDirectory + "redep.txt";
                 DotWriter.reduceDotfile(dotFileName, redepFile);
                 dotFileName = redepFile;
                 pngFile = repngFile;
@@ -440,11 +440,8 @@ namespace DepCharter
     }
 }
 
-//todo: CoCa projects are not always found, maybe the project-base directory is not correctly determined? or there are old/broken references
-//todo: how to interpret 'AUTOLOADER' as dependency?    -> you don't 'AUTOLOADER' is a component (never appears in 'ProjectDependsOn' (FDT) or 'ProjectUses' (FBT)
-//      but only in 'ProjectRefers'
-//todo: create an option to also visualize 'ProjectRefers' entries (external components like 'INFRA', 'FEI_CPPLIBS', or 'AUTOLOADER', 'boost' or 'googlemock' (SCOTS components)
-//      use spheres to indicate Components?
+//todo: recursively search for projects from a given root-folder
+//todo: do not require write-access to the path where the solution is, enable depcharter to be used on read-only network drives
 //todo: add arrow-colors to legenda
 //todo: see BhvSpecimenExchangePS probably just an errornous dependency
 //todo: show duplicated dependencies as separate arrows
