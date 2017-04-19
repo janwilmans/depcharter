@@ -96,7 +96,7 @@ namespace DepCharter
                     list = base.SelectNodes(xpath, NamespaceManager);
                 }
             }
-            catch (System.Xml.XPath.XPathException e)
+            catch (System.Xml.XPath.XPathException)
             {
                 OutputDebugString("xpath: " + xpath + " not found.");
             }
