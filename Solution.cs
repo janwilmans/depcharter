@@ -17,7 +17,7 @@ namespace DepCharter
         {
             if (projects.ContainsKey(project.Id))
             {
-                Console.WriteLine("error in solution, project '" + project.Name + "' listed multiple times! (ignored)");
+                Console.WriteLine("Notice: project '" + project.Name + "' listed multiple times (ignored)");
             }
             else
             {

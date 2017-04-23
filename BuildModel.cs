@@ -1,11 +1,6 @@
-﻿// Solution.cs read Visual Studio Solution (.sln) files, these are plain-text files in a undocumented line-based format.
-
-using System;
+﻿using System;
 using System.IO;
-using System.Collections; // ArrayList
-using System.Collections.Generic; // Dictionary <>
-using System.Windows.Forms;
-using System.Diagnostics;
+using System.Collections.Generic;
 
 namespace DepCharter
 {
@@ -38,6 +33,12 @@ namespace DepCharter
 
         public void Add(Solution solution, Project project)
         {
+            if (m_solutionProjects.ContainsKey(project.Id))
+            {
+                Console.WriteLine("Ignoring duplicate project id from: " + project.Filename);
+                return;
+            }
+
             solution.Add(project);
             m_solutions[solution] = false;
             m_solutionProjects.Add(project.Id, project);

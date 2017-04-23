@@ -4,6 +4,6 @@ Note: these steps should be executed manually:
 
 - run "Add DepCharter to Context Menu.reg" and confirm the additions should be added to the registry
 
-- install Graphviz (tested with graphviz-2.24.msi)
+- install Graphviz (tested with graphviz-2.38.msi)
 
-- now you can right-click any .sln file to generate graphs
+- now you can right-click any .sln, project file or folder to generate graphs

@@ -243,24 +243,51 @@ namespace DepCharter
             Program.Model = new BuildModel();   //todo: refactor solution and project to use the BuildModel
 
             Solution solution;
-            //todo: accept a directory which scans for project-files recursively (makes sense only in the FEI use-case)
-            // 
-            if (Settings.input.ToLower().EndsWith(".sln"))
+
+            if (!string.IsNullOrEmpty(Settings.WorkingDirectory))
             {
+                Console.WriteLine("Gather projects from: " + Settings.WorkingDirectory);
+                var list = Directory.GetFiles(Settings.WorkingDirectory, "*.*proj", SearchOption.AllDirectories);
+
                 solution = new Solution();
-                solution.read(Settings.input);
+                solution.Name = "Internal";
+                Program.Model.Solutions.Add(solution);
+                foreach (string s in list)
+                {
+                    var project = solution.readProject(s, Path.GetFileName(s));
+
+                    // workaround broken files?
+                    if (project.Id == "")
+                    {
+                        Console.WriteLine("Broken!: " + project.Filename);
+                    }
+                    else
+                    {
+                        Program.Model.Add(solution, project);
+                    }
+                }
+
                 solution.resolveIds();
                 solution.markIgnoredProjects();
             }
             else
             {
-                solution = new Solution();
-                solution.readProject(Settings.input, Path.GetFileName(Settings.input));
-                solution.resolveIds();
-                solution.markIgnoredProjects();
+                if (Settings.input.ToLower().EndsWith(".sln"))
+                {
+                    solution = new Solution();
+                    solution.read(Settings.input);
+                    solution.resolveIds();
+                    solution.markIgnoredProjects();
+                }
+                else // assume the specified file is a project file instead of a solution
+                {
+                    solution = new Solution();
+                    solution.readProject(Settings.input, Path.GetFileName(Settings.input));
+                    solution.resolveIds();
+                    solution.markIgnoredProjects();
+                }
+                Program.Model.Solutions.Add(solution);
             }
-
-            Program.Model.Solutions.Add(solution);
 
             int deps = solution.DepCount;
             Console.WriteLine("Found " + solution.projects.Values.Count + " projects with " + deps + " relationships");
@@ -418,6 +445,10 @@ namespace DepCharter
             }
 
             if (Settings.input != null && File.Exists(Settings.input))
+            {
+                Execute();
+            }
+            else if (Settings.WorkingDirectory != "")
             {
                 Execute();
             }

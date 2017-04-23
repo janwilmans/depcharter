@@ -19,14 +19,20 @@ namespace DepCharter
         Utility = 10,
         Unexpected = -1,
         Library = -2,     // C#
-        WinExe = -3,      // C#
+        WinExe = -3,      // C# Windows UI 
+        Exe = -4,         // C# Console (-4 not verified)
     }
 
+    // {FAE04EC0-301F-11D3-BF4B-00C04F79EFBC} = C# project
+    // {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942} = C++ project
+    // {2150E333-8FDC-42A3-9474-1A3956D46DE8} = Filter folder
     class Project
     {
         public void InitializeFromSolutionLine(string firstLine)
         {
             SolutionLine solutionLine = new SolutionLine(firstLine);
+            if (solutionLine[0][1] == "{2150E333-8FDC-42A3-9474-1A3956D46DE8}") this.Ignore = true; // ignore folders
+
             this.Id = solutionLine[2][1].ToLower();       // store in lower-case, _must_ be treated case-insensitive
             this.Name = solutionLine[0][3];
             this.Filename = Path.GetFullPath(Path.GetDirectoryName(Solution.Fullname) + @"\" + solutionLine[1][1]);
@@ -107,8 +113,7 @@ namespace DepCharter
         {
             string extraInfo = "";
             if (this.Ignore) return;
-            //if (Settings.restrictToSolution && (!Program.Model.IsSolutionProject(this))) return; // does not make sense (projects should not have been added in the first place)
-            String color = "white";   // white so independend .sln files will look 'normal'
+            String color = "white";
             switch (OutputType)
             {
                 case ConfigurationType.Application:
@@ -230,7 +235,7 @@ namespace DepCharter
             return result;
         }
 
-        public void AddProjectToProjectDependency(string id, string name) 
+        public void AddProjectToProjectDependency(string id, string name)
         {
             // project can refer also to projects outside the solution
             AddDependency(GetProjectForId(id, name), Origin.ProjectToProject);
@@ -280,17 +285,58 @@ namespace DepCharter
             }
         }
 
+        // maps the actual Outputtype to one that is in the legenda (winexe/exe mapped to application)
+        private void DetermineOutputTypeByName()
+        {
+            OutputType = ConfigurationType.Unexpected;
+            if (OutputTypeName.ToLower() == ConfigurationType.Makefile.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.Makefile;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.Application.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.Application;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.DynamicLibrary.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.DynamicLibrary;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.Library.ToString().ToLower())  // C# libraries are never static
+            {
+                OutputType = ConfigurationType.Library;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.StaticLibrary.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.StaticLibrary;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.Utility.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.Utility;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.WinExe.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.Application;
+            }
+            else if (OutputTypeName.ToLower() == ConfigurationType.Exe.ToString().ToLower())
+            {
+                OutputType = ConfigurationType.Application;
+            }
+            else
+            {
+                Console.WriteLine("Warning: Project '" + OutputName + "' has unknown OutputTypeName '" + OutputTypeName + "'");
+            }
+        }
+
         public void readProjectFile()
         {
+            Console.WriteLine("Project '" + this.Name + "'");
+            FileInfo projectFile = new FileInfo(this.Filename);
+
             // defaults
-            OutputName = "";
+            OutputName = projectFile.Name;
             OutputType = ConfigurationType.Unexpected;
             OutputTypeName = "";
             ProjectType = "";
-
-            bool informationCollected = false;
-
-            FileInfo projectFile = new FileInfo(this.Filename);
 
             // if the project file does not exist, we accept that no
             // additional information is available and continue.
@@ -315,7 +361,6 @@ namespace DepCharter
                 // its a C# project
                 Name = "[C#] " + Name;
                 ProjectType = "C#";
-                informationCollected = true;
 
                 var outputList = doc.GetNodes("/vs:Project/vs:PropertyGroup/vs:OutputType").ToList();
                 if (outputList.Count > 0)
@@ -339,13 +384,12 @@ namespace DepCharter
                     Id = projectGuid;
                 }
                 readProjectToProjectReferences(doc);
+                DetermineOutputTypeByName();
             } // end C# part
             else if (projectFile.Name.EndsWith(".vcproj") || projectFile.Name.EndsWith(".vcxproj"))
             {
                 // its a C++ project
                 ProjectType = "C++";
-
-                Console.WriteLine("Project '" + this.Name + "'");
 
                 string projectGuid = doc.GetNodeContent("//vs:PropertyGroup[@Label='Globals']/vs:ProjectGuid", "").ToLower();
                 if (!string.IsNullOrEmpty(projectGuid))
@@ -363,7 +407,6 @@ namespace DepCharter
                 if (configurations.Count > 0)
                 {
                     ReadVCXProjStyle(doc, configurations);
-                    informationCollected = true;
                     readProjectToProjectReferences(doc);
                 }
                 else
@@ -372,10 +415,19 @@ namespace DepCharter
                     if (configs.Count > 0)
                     {
                         ReadVCProjStyle(configs); // before vs2010 the project xml layout was different.
-                        informationCollected = true;
                     }
                 }
             } // end C++ part
+
+
+      // FBT 
+      //< UserProperties ProjectDefines = "_SCL_SECURE_NO_WARNINGS;NOMINMAX"
+      //ProjectRefers = "INFRA;FEI_CPPLIBS[SDK];HEP"
+      //ProjectExlibs = "Libraries\boost;[32]Libraries\boost\lib;[64]Libraries\boost\lib64;Libraries\fftw\include;[32]Libraries\fftw\lib;[64]Libraries\fftw\lib64;Libraries\prodrivemotionlibrary_tsc_r14\include;[32]Libraries\prodrivemotionlibrary_tsc_r14\windows-x86_32\lib;[64]Libraries\prodrivemotionlibrary_tsc_r14\windows-x86_64\lib"
+      //ProjectExport = "5"
+      //PCHSupport = "yes"
+      //ProjectType = "WinDLL"
+      //ProjectUses = "common.motioninfra;common.EventsGenerator;motion2.HalMotion3;hardwareSpecific.HalMotionHardwareSpecific;common.MotionDiagnosticIOTypelib;motion2.HalMotion3Lib;hardwareSpecific.HalMotionProdriveSpecific" />
 
 
             // FEI (2012) specific extention
@@ -407,45 +459,6 @@ namespace DepCharter
                 }
             }
             // FEI (2012) specific extention
-
-            if (informationCollected)
-            {
-                OutputType = ConfigurationType.Unexpected;
-                if (OutputTypeName.ToLower() == ConfigurationType.Makefile.ToString().ToLower())
-                {
-                    OutputType = ConfigurationType.Makefile;
-                }
-                else if (OutputTypeName.ToLower() == ConfigurationType.Application.ToString().ToLower())
-                {
-                    OutputType = ConfigurationType.Application;
-                }
-                else if (OutputTypeName.ToLower() == ConfigurationType.DynamicLibrary.ToString().ToLower())
-                {
-                    OutputType = ConfigurationType.DynamicLibrary;
-                }
-                else if (OutputTypeName.ToLower() == ConfigurationType.Library.ToString().ToLower())  // C# libraries are never static
-                {
-                    OutputType = ConfigurationType.Library;
-                }
-                else if (OutputTypeName.ToLower() == ConfigurationType.StaticLibrary.ToString().ToLower())
-                {
-                    OutputType = ConfigurationType.StaticLibrary;
-                }
-                else if (OutputTypeName.ToLower() == ConfigurationType.Utility.ToString().ToLower())
-                {
-                    OutputType = ConfigurationType.Utility;
-                }
-                else if (OutputTypeName.ToLower() == ConfigurationType.WinExe.ToString().ToLower())
-                {
-                    OutputType = ConfigurationType.WinExe;
-                }
-            }
-            else
-            {
-                ProjectType = "unknown";
-                OutputName = projectFile.Name;
-                Console.WriteLine("File could not be identified as a project file: " + OutputName);
-            }
         }
 
         // received a list of 'PropertyGroup' Nodes with an Attribute: 'Label="Configuration"'
@@ -485,6 +498,7 @@ namespace DepCharter
             }
 
             OutputTypeName = doc.GetNodeContent(configuration, "ConfigurationType", ConfigurationType.Unexpected.ToString());
+            DetermineOutputTypeByName();
         }
 
         void ReadVCProjStyle(List<XmlNode> configs)
@@ -526,11 +540,7 @@ namespace DepCharter
                 }
 
                 OutputTypeName = configuration.GetAttribute("ConfigurationType");
-
-                // add GenerateDebugInformation
-                Console.WriteLine("projectType: {0}", ProjectType);
-                Console.WriteLine("outputTypeName: {0}", OutputTypeName);
-                Console.WriteLine("outputName: {0}", OutputName);
+                Enum.TryParse<ConfigurationType>(OutputTypeName, true, out OutputType);
             }
             else
             {

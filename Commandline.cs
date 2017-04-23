@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace DepCharter
 {
-    enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config, userProperties, searchDirs, restrictToSolution }
+    enum Parser { notmatched, project, projectArgument, ignore, ignoreArgument, verbose, reduce, help, font, fontsize, fontsizeArgument, aspect, aspectArgument, hide, config, userProperties, restrictToSolution, searchDirs, searchDirsArgument }
 
     class Settings
     {
@@ -28,7 +28,7 @@ namespace DepCharter
             optionList.Add(new Option("/v", Parser.verbose, "  /v  : be verbose"));
             optionList.Add(new Option("/u", Parser.userProperties, "  /u  : read UserProperties from Project files to establish relationships"));
             optionList.Add(new Option("/o", Parser.restrictToSolution, "  /o  : only show projects that are actually in the solution"));
-            //optionList.Add(new Option("/sd", Parser.searchDirs, "  /sd : search directories to find related projects"));
+            optionList.Add(new Option("/sd", Parser.searchDirs, Parser.searchDirsArgument, "  /sd [<path>] : search directories to find related projects"));
         }
 
         public static void ProcessOption(Parser action, string arg)
@@ -80,6 +80,9 @@ namespace DepCharter
                 case Parser.restrictToSolution:
                     Settings.restrictToSolution = true;
                     break;
+                case Parser.searchDirsArgument:
+                    Settings.WorkingDirectory = Path.GetFullPath(arg + "\\");
+                    break;
                 default:
                     // we are done process this option's arguments
                     // if no action is takes (default), we are not done yet.
@@ -119,7 +122,6 @@ namespace DepCharter
             if (currentOption == null && File.Exists(arg))    // the Parser was not matched, asume it was a filename
             {
                 Settings.input = Path.GetFullPath(arg).ToLower();
-                Settings.workdir = Path.GetDirectoryName(Settings.input) + "\\";
                 Console.WriteLine("Settings.input: " + Settings.input);
             }
             else
@@ -134,8 +136,8 @@ namespace DepCharter
             get { return System.IO.Path.GetTempPath() + "DepCharter\\"; }
         }
 
-        public static string input;
-        public static string workdir;
+        public static string WorkingDirectory = "";
+        public static string input = "";
         public static bool verbose;
         public static bool reduce;
         public static bool truetypefont;

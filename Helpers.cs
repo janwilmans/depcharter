@@ -47,6 +47,11 @@ namespace DepCharter
             }
         }
 
+        //public SolutionProjectType Type
+        //{
+        //    get { return Project(\"{2150E333-8FDC-42A3-9474-1A3956D46DE8}\")}
+        //}
+
         public ArrayList particles = new ArrayList();
     }
 
