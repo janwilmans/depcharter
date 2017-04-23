@@ -81,7 +81,7 @@ namespace DepCharter
                     Settings.restrictToSolution = true;
                     break;
                 case Parser.searchDirsArgument:
-                    Settings.WorkingDirectory = Path.GetFullPath(arg + "\\");
+                    Settings.searchDirectories.Add(Path.GetFullPath(arg + "\\"));
                     break;
                 default:
                     // we are done process this option's arguments
@@ -136,7 +136,6 @@ namespace DepCharter
             get { return System.IO.Path.GetTempPath() + "DepCharter\\"; }
         }
 
-        public static string WorkingDirectory = "";
         public static string input = "";
         public static bool verbose;
         public static bool reduce;
@@ -154,6 +153,7 @@ namespace DepCharter
         public static ArrayList ignoreEndsWithList = new ArrayList();
         public static ArrayList projectsList = new ArrayList();
         public static ArrayList optionList = new ArrayList();
+        public static ArrayList searchDirectories = new ArrayList();
         public static Option currentOption;
 
     }

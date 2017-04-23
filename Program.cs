@@ -244,29 +244,31 @@ namespace DepCharter
 
             Solution solution;
 
-            if (!string.IsNullOrEmpty(Settings.WorkingDirectory))
+            if (Settings.searchDirectories.Count > 0)
             {
-                Console.WriteLine("Gather projects from: " + Settings.WorkingDirectory);
-                var list = Directory.GetFiles(Settings.WorkingDirectory, "*.*proj", SearchOption.AllDirectories);
-
                 solution = new Solution();
                 solution.Name = "Internal";
                 Program.Model.Solutions.Add(solution);
-                foreach (string s in list)
+                foreach (string directoryName in Settings.searchDirectories)
                 {
-                    var project = solution.readProject(s, Path.GetFileName(s));
+                    Console.WriteLine("Gather projects from: " + directoryName);
+                    var list = Directory.GetFiles(directoryName, "*.*proj", SearchOption.AllDirectories);
 
-                    // workaround broken files?
-                    if (project.Id == "")
+                    foreach (string s in list)
                     {
-                        Console.WriteLine("Broken!: " + project.Filename);
-                    }
-                    else
-                    {
-                        Program.Model.Add(solution, project);
+                        var project = solution.readProject(s, Path.GetFileName(s));
+
+                        // workaround broken files?
+                        if (project.Id == "")
+                        {
+                            Console.WriteLine("Broken!: " + project.Filename);
+                        }
+                        else
+                        {
+                            Program.Model.Add(solution, project);
+                        }
                     }
                 }
-
                 solution.resolveIds();
                 solution.markIgnoredProjects();
             }
@@ -448,7 +450,7 @@ namespace DepCharter
             {
                 Execute();
             }
-            else if (Settings.WorkingDirectory != "")
+            else if (Settings.searchDirectories.Count > 0)
             {
                 Execute();
             }
