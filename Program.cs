@@ -473,10 +473,8 @@ namespace DepCharter
     }
 }
 
-//todo: recursively search for projects from a given root-folder
-//todo: do not require write-access to the path where the solution is, enable depcharter to be used on read-only network drives
+//todo: write Shell Extension Handler, so multiple .sln or folders can be used?
 //todo: add arrow-colors to legenda
 //todo: see BhvSpecimenExchangePS probably just an errornous dependency
-//todo: show duplicated dependencies as separate arrows
 //todo: see http://dependencyvisualizer.codeplex.com/ (similar project)
 //todo: use http://quickgraph.codeplex.com/ ?

@@ -6,4 +6,4 @@ Windows Registry Editor Version 5.00
 @="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /r \"%1\""
 
 [HKEY_CLASSES_ROOT\Folder\Shell\DepCharter\Command]
-@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /r \"%1\""
+@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /r /sd \"%1\""
