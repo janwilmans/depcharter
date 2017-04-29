@@ -1,0 +1,25 @@
+DepCharter History:
+
+April 2010
+- First release of DepCharter v1
+
+15-11-2012
+- added FEI specific reading of UserProperties
+- robust command-line handling for relative paths
+
+18-12-2012
+- fixed several bugs in interpreting the FEI UserProperties
+- added legend
+- better compatibility for mixed C++/C# solutions
+- support VS2008 and VS2010/2013 project files for C# and C++
+
+14-10-2016
+- added FDT UserProperties support
+- added line coloring to indicate the dependency origin (red=solution, blue=project, green=UserProperties)
+- added visualization of multiple origins (even in reduced graph)
+- fix issue that caused some dependencies not to be shown
+- fixes several crashes in case of web-projects and project-references to projects not in the solution
+
+29-04-2017
+- add support to recursively scan folders for projects
+- fixed problems resolving project-types 
