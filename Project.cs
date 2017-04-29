@@ -330,6 +330,13 @@ namespace DepCharter
         public void readProjectFile()
         {
             Console.WriteLine("Project '" + this.Name + "'");
+            readProjectFileInternal();
+            Console.WriteLine("  Filename: '" + this.Filename + "'");
+            Console.WriteLine("  OutputType: '" + this.OutputType + "' (" + OutputTypeName + ")");
+        }
+
+        private void readProjectFileInternal()
+        {
             FileInfo projectFile = new FileInfo(this.Filename);
 
             // defaults
