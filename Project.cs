@@ -218,27 +218,31 @@ namespace DepCharter
             AddDependency(project, Origin.Solution);
         }
 
-        public Project GetProjectForId(string id, string name)
+        private Solution Workaround_GetSolution()
         {
-            Project result = null;
-            if (Solution.projects.ContainsKey(id))
-            {
-                // project is the same solution 
-                result = Solution.projects[id];
-            }
-            else
-            {
-                // todo: resolve the project outside the solution by scanning for it recursively down the directory-tree
-                if (Settings.verbose) Console.WriteLine("  ^-- could not be resolved!");
-                result = new Project(name);
-            }
-            return result;
+            if (Solution != null) return this.Solution;
+            return users.Keys[0].Workaround_GetSolution();
         }
 
-        public void AddProjectToProjectDependency(string id, string name)
+        public void AddProjectToProjectDependency(Project project)
         {
+            // do we already know this project?
+            if (Solution != null)
+            {
+                if (Solution.projects.ContainsKey(project.Id))
+                {
+                    // project is part of the same solution 
+                    AddDependency(Solution.projects[project.Id], Origin.ProjectToProject);
+                    return;
+                }
+            }
+            project.readProjectFile();
+
+            // we pretent to be path of the same solution as our anchesters
+            Workaround_GetSolution().Add(project);     // this workaround is plain wrong, it is not part of the solution, but the buildmodel
+
             // project can refer also to projects outside the solution
-            AddDependency(GetProjectForId(id, name), Origin.ProjectToProject);
+            AddDependency(project, Origin.ProjectToProject);
         }
 
         public void AddUserPropertyDependency(Project project)
@@ -277,11 +281,16 @@ namespace DepCharter
             var projectReferences = doc.GetNodes("//vs:ItemGroup/vs:ProjectReference/vs:Project");
             foreach (XmlElement project in projectReferences)
             {
-                string name = Path.GetFileName(project.ParentNode.Attributes["Include"].InnerText);
                 string id = project.InnerText;
-                if (Settings.verbose) Console.WriteLine("  ProjectReference: " + id + " " + name);
+                var newProject = new Project(id);
+                newProject.Solution = this.Solution;    // wrong, !!
+                var relativeProjectPath = Path.GetDirectoryName(this.Filename);
+                newProject.Filename = Path.GetFullPath(relativeProjectPath + "\\" + project.ParentNode.Attributes["Include"].InnerText);
+                newProject.Name = Path.GetFileName(newProject.Filename);
+                
+                if (Settings.verbose) Console.WriteLine("  ProjectReference: " + id + " " + newProject.Name);
                 if (Settings.restrictToSolution && (!Solution.containsProjectId(id))) continue;
-                AddProjectToProjectDependency(id, name);
+                AddProjectToProjectDependency(newProject);
             }
         }
 
@@ -347,7 +356,11 @@ namespace DepCharter
 
             // if the project file does not exist, we accept that no
             // additional information is available and continue.
-            if (!projectFile.Exists) return;
+            if (!projectFile.Exists)
+            {
+                Console.WriteLine("  Warning: " + this.Filename + " not found!");
+                return;
+            }
 
             XmlContext doc = new XmlContext();
             if (projectFile.Name.EndsWith(".csproj") || projectFile.Name.EndsWith(".vcproj") || projectFile.Name.EndsWith(".vcxproj"))

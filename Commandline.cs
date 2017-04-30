@@ -81,7 +81,7 @@ namespace DepCharter
                     Settings.restrictToSolution = true;
                     break;
                 case Parser.searchDirsArgument:
-                    Settings.searchDirectories.Add(Path.GetFullPath(arg + "\\"));
+                    Settings.searchDirectories.Add(Path.GetFullPath(arg));
                     break;
                 default:
                     // we are done process this option's arguments

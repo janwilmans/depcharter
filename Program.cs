@@ -242,6 +242,9 @@ namespace DepCharter
         {
             Program.Model = new BuildModel();   //todo: refactor solution and project to use the BuildModel
 
+            // we now create a fake 'solution', but the dot-file should just be based on the the BuildModel.
+            // also remove the assumption that projects are always part of a solution, that is just nolonger true.
+            // project-to-project references are read, added to the project, but not to the solution (would be wrong), and not to the build model (should happen)
             Solution solution;
 
             if (Settings.searchDirectories.Count > 0)
@@ -266,6 +269,14 @@ namespace DepCharter
                         else
                         {
                             Program.Model.Add(solution, project);
+
+                            // workaround
+                            foreach (var dp in project.dependencies.Keys)
+                            {
+                                Program.Model.Add(solution, dp);
+                            }
+                            // workaround
+
                         }
                     }
                 }
