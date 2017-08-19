@@ -1,6 +1,6 @@
 # depcharter
 
-[![Build status](https://ci.appveyor.com/api/projects/status/4of6ag1kxjadtaln/branch/master?svg=true)](https://ci.appveyor.com/project/janwilmans/depcharter/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/4of6ag1kxjadtaln/branch/master?svg=true)](https://ci.appveyor.com/project/janwilmans/depcharter/branch/master) using VS2017
 
 creates project dependency diagrams from visual studio solution files in Graphviz DOT format
 this project was inspired by:
