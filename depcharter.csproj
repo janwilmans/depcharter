@@ -78,7 +78,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "$(TargetPath)" "C:\Program Files\DepCharter\$(TargetFileName)" || echo could not copy file, make sure the current user has access rights to C:\Program Files\DepCharter"</PostBuildEvent>
+    <PostBuildEvent>xcopy /Y /T "$(TargetPath)" "C:\Program Files\DepCharter\$(TargetFileName)" || ver || echo could not copy file, make sure the current user has access rights to C:\Program Files\DepCharter"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
