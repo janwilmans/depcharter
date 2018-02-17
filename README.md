@@ -13,7 +13,6 @@ but both projects depend on internal visual studio API's to read the .sln files.
 This project performs simular functions (and hopefully more) and also works with the express editions.
 
 Tested with:
-
  - visual studio 2010 (C++ and C#) 
  - visual studio 2013 (C++ and C#), vsproj and vcxproj format.
 
