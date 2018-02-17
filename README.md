@@ -17,7 +17,7 @@ Tested with:
  - visual studio 2010 (C++ and C#) 
  - visual studio 2013 (C++ and C#), vsproj and vcxproj format.
 
-Untested, but should work just as well: vs2015 / vs2017 (all editions)
+Untested, but should work just as well vs2015 / vs2017 (all editions)
 
 # references
 
