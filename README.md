@@ -23,3 +23,11 @@ Untested, but should work just as well: vs2015 / vs2017 (all editions)
 
 similar project, but using clang source code analysis instead of project files:
 https://github.com/tomtom-international/cpp-dependencies
+
+# References
+
+- <http://releases.llvm.org/download.html>
+- <http://www.nowind.nl>
+- using Visual Studio 2017 RC1 with clang-support
+- <https://www.visualstudio.com/vs/visual-studio-2017-rc/>
+- <http://www.myquest.nl/z80undocumented/z80-documented-v0.91.pdf>
