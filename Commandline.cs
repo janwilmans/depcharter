@@ -119,7 +119,7 @@ namespace DepCharter
                     return;
                 }
             }
-            if (currentOption == null && File.Exists(arg))    // the Parser was not matched, asume it was a filename
+            if (currentOption == null && File.Exists(arg))    // the Parser was not matched, assume it was a filename
             {
                 Settings.input = Path.GetFullPath(arg).ToLower();
                 Console.WriteLine("Settings.input: " + Settings.input);
