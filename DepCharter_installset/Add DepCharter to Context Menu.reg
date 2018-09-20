@@ -1,9 +1,11 @@
 Windows Registry Editor Version 5.00
 
-; we add ourselves to the 'any file' entry '*' because visual studio hijacks (and hides) any extentions to the .sln extention
+[HKEY_CLASSES_ROOT\.sln]
+"Content Type"="text/plain"
+@="VisualStudio.Launcher.sln"
 
-[HKEY_CLASSES_ROOT\*\Shell\DepCharter\Command]
-@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /r \"%1\""
+[HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter\Command]
+@="\"C:\\Program Files (x86)\\DepCharter\\DepCharter.exe\" /r \"%1\""
 
-[HKEY_CLASSES_ROOT\Folder\Shell\DepCharter\Command]
-@="\"C:\\Program Files\\DepCharter\\DepCharter.exe\" /r /sd \"%1\""
+;[HKEY_CLASSES_ROOT\VisualStudio.Launcher.sln\Shell\DepCharter config\Command]
+;@="\"C:\\Program Files (x86)\\DepCharter\\DepCharter.exe\" /h /c /r \"%1\""

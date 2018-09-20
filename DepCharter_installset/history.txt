@@ -28,3 +28,5 @@ April 2010
 - add support to recursively scan folders for projects
 - fixed problems 
 
+29-09-2018
+- updated to and tested last vs2017 version

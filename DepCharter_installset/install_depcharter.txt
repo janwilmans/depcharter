@@ -1,9 +1,9 @@
-Note: these steps should be executed manually:
+- copy files to "c:\Program Files (x86)\depcharter" (path hardcoded in .reg files to add context menus)
 
-- press 'install' to extract to c:\program files\depcharter (path hardcoded in .reg files to add context menus)
+- run "Add DepCharter to Context Menu.reg"
 
-- run "Add DepCharter to Context Menu.reg" and confirm the additions should be added to the registry
+- install Graphviz (tested with graphviz-2.28.0.msi)
 
-- install Graphviz (tested with graphviz-2.38.msi)
+Usage:
 
-- now you can right-click any .sln, project file or folder to generate graphs
+right-click any .sln file and choose 'DepCharter' to generate a dependency graph
