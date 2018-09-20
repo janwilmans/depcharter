@@ -14,12 +14,14 @@ This project performs simular functions (and hopefully more) and also works with
 
 Tested with:
  - visual studio 2010 (C++ and C#) 
- - visual studio 2013 (C++ and C#), vsproj and vcxproj format.
-
-Untested, but should work just as well vs2015 / vs2017 (all editions)
+ - visual studio 2013, 2015, 2017 (C++ and C#), vsproj and vcxproj format.
 
 # references
 
-similar project, but using clang source code analysis instead of project files:
+This project offers a similar visualization, but uses clang source code analysis to determine wat
+the dependencies actually should be, instead of visualizing what dependencies we have.
 https://github.com/tomtom-international/cpp-dependencies
 
+See also
+http://dependencyvisualizer.codeplex.com/ (similar project)
+http://quickgraph.codeplex.com/ ?
