@@ -238,7 +238,7 @@ namespace DepCharter
             }
             project.readProjectFile();
 
-            // we pretent to be path of the same solution as our anchesters
+            // we pretend to be path of the same solution as our anchesters
             Workaround_GetSolution().Add(project);     // this workaround is plain wrong, it is not part of the solution, but the buildmodel
 
             // project can refer also to projects outside the solution
@@ -262,6 +262,7 @@ namespace DepCharter
                 }
                 return;
             }
+
 
             // read relationships from FEI specific UserProperties
             foreach (string projectName in GetUserPropertyEntries())
