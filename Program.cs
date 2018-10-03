@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Runtime.Remoting.Messaging;
 using System.Xml;
 using System.Xml.XPath;
 
@@ -94,7 +95,7 @@ namespace DepCharter
         {
             System.Diagnostics.Process tredProc = new System.Diagnostics.Process();
             Console.WriteLine("Using tred to create reduced dot file {0}", outputname);
-            tredProc.StartInfo.FileName = "tred.exe";
+            tredProc.StartInfo.FileName = GraphvizPath("tred.exe");
             tredProc.StartInfo.Arguments = inputname;
             tredProc.StartInfo.UseShellExecute = false;
             tredProc.StartInfo.RedirectStandardOutput = true;
@@ -112,15 +113,22 @@ namespace DepCharter
             }
             catch (Exception)
             {
-                MessageBox.Show("Error during TRED execution (is Graphviz installed?)", Application.ProductName);
+                MessageBox.Show("Error during TRED execution.\nLooking for '" + tredProc.StartInfo.FileName + "'\n(is Graphviz installed?)", Application.ProductName);
             }
+        }
+
+        static public string GraphvizPath(string s)
+        {
+            string f = @"C:\Program Files (x86)\Graphviz2.38\bin\" + s;
+            if (File.Exists(f)) return f;
+            return s;
         }
 
         static public void createPngFromDot(string dotInputname, string pngOutputname)
         {
             if (File.Exists(pngOutputname)) File.Delete(pngOutputname);
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
-            proc.StartInfo.FileName = "dot.exe";
+            proc.StartInfo.FileName = GraphvizPath("dot.exe");
             proc.StartInfo.Arguments = " -Tpng " + dotInputname + " -o " + pngOutputname;
             proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             try
@@ -130,7 +138,7 @@ namespace DepCharter
             }
             catch (Exception)
             {
-                MessageBox.Show("Error during DOT execution (is Graphviz installed?)", Application.ProductName);
+                MessageBox.Show("Error during DOT execution.\nLooking for '" + proc.StartInfo.FileName + "'\n(is Graphviz installed?)", Application.ProductName);
             }
         }
 
