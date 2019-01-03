@@ -96,7 +96,7 @@ namespace DepCharter
             System.Diagnostics.Process tredProc = new System.Diagnostics.Process();
             Console.WriteLine("Using tred to create reduced dot file {0}", outputname);
             tredProc.StartInfo.FileName = GraphvizPath("tred.exe");
-            tredProc.StartInfo.Arguments = inputname;
+            tredProc.StartInfo.Arguments = inputname.Trim('\"').SurroundWithDoubleQuotes();
             tredProc.StartInfo.UseShellExecute = false;
             tredProc.StartInfo.RedirectStandardOutput = true;
 
@@ -129,7 +129,7 @@ namespace DepCharter
             if (File.Exists(pngOutputname)) File.Delete(pngOutputname);
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = GraphvizPath("dot.exe");
-            proc.StartInfo.Arguments = " -Tpng " + dotInputname + " -o " + pngOutputname;
+            proc.StartInfo.Arguments = " -Tpng " + dotInputname.Trim('\"').SurroundWithDoubleQuotes() + " -o " + pngOutputname.Trim('\"').SurroundWithDoubleQuotes();
             proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             try
             {
