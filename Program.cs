@@ -129,7 +129,7 @@ namespace DepCharter
             if (File.Exists(pngOutputname)) File.Delete(pngOutputname);
             System.Diagnostics.Process proc = new System.Diagnostics.Process();
             proc.StartInfo.FileName = GraphvizPath("dot.exe");
-            proc.StartInfo.Arguments = " -Tpng " + dotInputname.Trim('\"').SurroundWithDoubleQuotes() + " -o " + pngOutputname.Trim('\"').SurroundWithDoubleQuotes();
+            proc.StartInfo.Arguments = " -Tpng:gd:gd " + dotInputname.Trim('\"').SurroundWithDoubleQuotes() + " -o " + pngOutputname.Trim('\"').SurroundWithDoubleQuotes();
             proc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             try
             {
